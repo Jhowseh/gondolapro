@@ -1,9 +1,10 @@
 import { restoreControlCodes, showControlCodes } from '../../../core/controlCodes'
-import { languageInfo } from '../../../core/languages'
+import { DPI_OPTIONS, LANGUAGES, languageInfo } from '../../../core/languages'
 import { measureText } from '../../../core/measure'
-import type { BarcodeElement, BoxElement, LabelElement, LabelLayout, LineElement, RawElement, Rotation, Symbology, TextElement } from '../../../core/types'
+import type { BarcodeElement, BoxElement, LabelElement, LabelLayout, Language, LineElement, RawElement, Rotation, Symbology, TextElement } from '../../../core/types'
 import { dotsToMm } from '../../../core/units'
 import type { LayoutIssue } from '../../../core/validation'
+import { Icon } from './Icon'
 import { NumberField } from './NumberField'
 import { SampleFields } from './SampleFields'
 import { TagPicker } from './TagPicker'
@@ -15,8 +16,10 @@ interface PropertiesPanelProps {
   element: LabelElement | null
   issues: LayoutIssue[]
   onChange: (id: string, patch: Patch) => void
+  onLayoutChange: (patch: Partial<LabelLayout>) => void
   onDuplicate: (id: string) => void
   onRemove: (id: string) => void
+  onDeselect: () => void
   onSampleChange: (code: string, value: string) => void
 }
 
@@ -72,12 +75,12 @@ function TextProperties({ element, layout, onChange }: { element: TextElement; l
           onChange={(heightMm) => onChange({ heightMm, font: undefined })}
         />
       </div>
-      <p className="hint">{`${languageInfo(layout.language).label}: ${imported ? 'fonte importada, ' : ''}${fontDescription}`}</p>
-      {imported && (
-        <p className="hint">
-          A fonte veio do layout importado e é mantida exatamente como estava. Mudar a altura troca para a fonte escolhida automaticamente.
-        </p>
-      )}
+      <p
+        className="hint"
+        title={imported ? 'A fonte veio do layout importado e é mantida exatamente como estava. Mudar a altura troca para a fonte escolhida automaticamente.' : undefined}
+      >
+        {`${languageInfo(layout.language).label}: ${imported ? 'fonte importada, ' : ''}${fontDescription}`}
+      </p>
       <RotationField value={element.rotation} onChange={(rotation) => onChange({ rotation })} />
     </>
   )
@@ -139,11 +142,7 @@ function InvertField({ value, onChange }: { value: boolean; onChange: (invert: b
         <input type="checkbox" checked={value} onChange={(event) => onChange(event.target.checked)} />
         Inverter as cores do que estiver por baixo
       </label>
-      <p className="hint">
-        {value
-          ? 'Texto preto embaixo deste elemento sai branco. O elemento é enviado no fim do código, depois dos textos.'
-          : 'O elemento cobre de preto o que estiver embaixo.'}
-      </p>
+      {value && <p className="hint">Texto preto embaixo deste elemento sai branco. O elemento vai no fim do código, depois dos textos.</p>}
     </>
   )
 }
@@ -177,36 +176,57 @@ function contentsOf(elements: LabelElement[]): string[] {
   return elements.flatMap((item) => (item.type === 'text' || item.type === 'barcode' ? [item.content] : []))
 }
 
-export function PropertiesPanel({ layout, element, issues, onChange, onDuplicate, onRemove, onSampleChange }: PropertiesPanelProps) {
+function LabelProperties({
+  layout,
+  onLayoutChange,
+  onSampleChange
+}: {
+  layout: LabelLayout
+  onLayoutChange: (patch: Partial<LabelLayout>) => void
+  onSampleChange: (code: string, value: string) => void
+}) {
+  return (
+    <aside className="panel properties">
+      <div className="panel-header">
+        <h2>Etiqueta</h2>
+      </div>
+      <div className="field-row field-row-3">
+        <NumberField label="Largura" suffix="mm" value={layout.widthMm} min={10} max={240} onChange={(widthMm) => onLayoutChange({ widthMm })} />
+        <NumberField label="Altura" suffix="mm" value={layout.heightMm} min={5} max={300} onChange={(heightMm) => onLayoutChange({ heightMm })} />
+        <NumberField label="Espaço" suffix="mm" value={layout.gapMm} min={0} max={20} onChange={(gapMm) => onLayoutChange({ gapMm })} />
+      </div>
+      <div className="field-row">
+        <label className="field">
+          <span className="field-label">Linguagem</span>
+          <select value={layout.language} onChange={(event) => onLayoutChange({ language: event.target.value as Language })}>
+            {LANGUAGES.map((language) => (
+              <option key={language.id} value={language.id} title={language.printers}>
+                {language.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span className="field-label">Resolução</span>
+          <select value={layout.dpi} onChange={(event) => onLayoutChange({ dpi: Number(event.target.value) })}>
+            {DPI_OPTIONS.map((dpi) => (
+              <option key={dpi} value={dpi}>
+                {dpi} dpi
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <p className="hint">Impressoras: {languageInfo(layout.language).printers}</p>
+      <SampleFields texts={contentsOf(layout.elements)} samples={layout.samples} title="Valores de exemplo" onChange={onSampleChange} />
+      <p className="empty-state">Clique em um elemento da etiqueta para editá-lo.</p>
+    </aside>
+  )
+}
+
+export function PropertiesPanel({ layout, element, issues, onChange, onLayoutChange, onDuplicate, onRemove, onDeselect, onSampleChange }: PropertiesPanelProps) {
   if (!element) {
-    return (
-      <aside className="panel properties">
-        <h2>Propriedades</h2>
-        <p className="empty">Selecione um elemento na etiqueta para editar.</p>
-        <SampleFields texts={contentsOf(layout.elements)} samples={layout.samples} title="Valores de exemplo" onChange={onSampleChange} />
-        <div className="shortcuts">
-          <h3>Atalhos</h3>
-          <dl>
-            <dt>Setas</dt>
-            <dd>Move 0,5 mm (Shift: 5 mm)</dd>
-            <dt>Delete</dt>
-            <dd>Exclui o elemento</dd>
-            <dt>Ctrl+D</dt>
-            <dd>Duplica o elemento</dd>
-            <dt>Ctrl+Z / Ctrl+Y</dt>
-            <dd>Desfaz / refaz</dd>
-            <dt>Ctrl+S</dt>
-            <dd>Salva o layout</dd>
-            <dt>Ctrl+O</dt>
-            <dd>Abre layout, XML ou código</dd>
-            <dt>Ctrl+V</dt>
-            <dd>Importa código copiado</dd>
-            <dt>Ctrl+E</dt>
-            <dd>Exporta XML para o SysPDV</dd>
-          </dl>
-        </div>
-      </aside>
-    )
+    return <LabelProperties layout={layout} onLayoutChange={onLayoutChange} onSampleChange={onSampleChange} />
   }
 
   const change = (patch: Patch) => onChange(element.id, patch)
@@ -214,7 +234,12 @@ export function PropertiesPanel({ layout, element, issues, onChange, onDuplicate
 
   return (
     <aside className="panel properties">
-      <h2>{TITLES[element.type]}</h2>
+      <div className="panel-header">
+        <h2>{TITLES[element.type]}</h2>
+        <button type="button" className="icon-only icon-ghost" onClick={onDeselect} title="Voltar para a etiqueta (Esc)" aria-label="Voltar para a etiqueta">
+          <Icon name="close" size={14} />
+        </button>
+      </div>
 
       {element.type !== 'raw' && (
         <div className="field-row">
@@ -229,7 +254,7 @@ export function PropertiesPanel({ layout, element, issues, onChange, onDuplicate
       {element.type === 'line' && <LineProperties element={element} onChange={change} />}
       {element.type === 'box' && <BoxProperties element={element} onChange={change} />}
 
-      <SampleFields texts={contentsOf([element])} samples={layout.samples} title="Valor de exemplo" onChange={onSampleChange} />
+      <SampleFields texts={contentsOf([element])} samples={layout.samples} title="Valor de exemplo" defaultOpen onChange={onSampleChange} />
 
       {elementIssues.length > 0 && (
         <ul className="issue-list">

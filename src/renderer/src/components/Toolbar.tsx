@@ -1,16 +1,15 @@
-import { DPI_OPTIONS, LANGUAGES } from '../../../core/languages'
-import type { LabelLayout, Language } from '../../../core/types'
 import type { Theme } from '../theme'
-import { NumberField } from './NumberField'
+import { Icon } from './Icon'
+import { MenuButton } from './MenuButton'
 
 interface ToolbarProps {
-  layout: LabelLayout
+  name: string
   dirty: boolean
   theme: Theme
-  onToggleTheme: () => void
   canUndo: boolean
   canRedo: boolean
-  onLayoutChange: (patch: Partial<LabelLayout>) => void
+  onNameChange: (name: string) => void
+  onToggleTheme: () => void
   onNew: () => void
   onOpen: () => void
   onSave: () => void
@@ -18,78 +17,77 @@ interface ToolbarProps {
   onExport: () => void
   onUndo: () => void
   onRedo: () => void
+  onShortcuts: () => void
   onAbout: () => void
 }
 
 export function Toolbar(props: ToolbarProps) {
-  const { layout, dirty, onLayoutChange } = props
+  const themeLabel = props.theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'
 
   return (
     <header className="toolbar">
-      <div className="brand">
-        <span className="brand-mark">G</span>
-        <span className="brand-name">GôndolaPro</span>
+      <span className="brand-mark" title="GôndolaPro">
+        G
+      </span>
+      <div className="layout-title">
+        <input
+          className="layout-name"
+          value={props.name}
+          placeholder="Sem nome"
+          aria-label="Nome do layout"
+          title="Nome do layout"
+          spellCheck={false}
+          onChange={(event) => props.onNameChange(event.target.value)}
+        />
+        {props.dirty && <span className="dirty-dot" title="Alterações não salvas" />}
       </div>
 
+      <span className="toolbar-divider" />
+
       <div className="toolbar-group">
-        <button type="button" onClick={props.onNew} title="Novo layout">Novo</button>
-        <button type="button" onClick={props.onOpen} title="Abrir um layout .etq, um XML do SysPDV ou um código de impressora (Ctrl+O). Para código copiado do SysPDV, use Ctrl+V.">
+        <button type="button" onClick={props.onNew} title="Novo layout">
+          Novo
+        </button>
+        <button
+          type="button"
+          onClick={props.onOpen}
+          title="Abrir um layout .etq, um XML do SysPDV ou um código de impressora (Ctrl+O). Para código copiado do SysPDV, use Ctrl+V."
+        >
           Abrir
         </button>
         <button type="button" onClick={props.onSave} title="Salvar (Ctrl+S)">
-          Salvar{dirty ? ' •' : ''}
+          Salvar
         </button>
-        <button type="button" onClick={props.onSaveAs} title="Salvar como (Ctrl+Shift+S)">Salvar como</button>
-        <button type="button" onClick={props.onExport} title="Gerar o XML que o SysPDV importa (Ctrl+E)">Exportar XML</button>
       </div>
 
       <div className="toolbar-group">
-        <button type="button" onClick={props.onUndo} disabled={!props.canUndo} title="Desfazer (Ctrl+Z)">Desfazer</button>
-        <button type="button" onClick={props.onRedo} disabled={!props.canRedo} title="Refazer (Ctrl+Y)">Refazer</button>
+        <button type="button" className="icon-only" onClick={props.onUndo} disabled={!props.canUndo} title="Desfazer (Ctrl+Z)" aria-label="Desfazer">
+          <Icon name="undo" />
+        </button>
+        <button type="button" className="icon-only" onClick={props.onRedo} disabled={!props.canRedo} title="Refazer (Ctrl+Y)" aria-label="Refazer">
+          <Icon name="redo" />
+        </button>
       </div>
 
-      <div className="toolbar-group toolbar-settings">
-        <label className="field field-wide">
-          <span className="field-label">Nome</span>
-          <input value={layout.name} onChange={(event) => onLayoutChange({ name: event.target.value })} />
-        </label>
-        <NumberField label="Largura" suffix="mm" value={layout.widthMm} min={10} max={240} onChange={(widthMm) => onLayoutChange({ widthMm })} />
-        <NumberField label="Altura" suffix="mm" value={layout.heightMm} min={5} max={300} onChange={(heightMm) => onLayoutChange({ heightMm })} />
-        <NumberField label="Espaço" suffix="mm" value={layout.gapMm} min={0} max={20} onChange={(gapMm) => onLayoutChange({ gapMm })} />
-        <label className="field">
-          <span className="field-label">Linguagem</span>
-          <select value={layout.language} onChange={(event) => onLayoutChange({ language: event.target.value as Language })}>
-            {LANGUAGES.map((language) => (
-              <option key={language.id} value={language.id} title={language.printers}>
-                {language.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span className="field-label">Resolução</span>
-          <select value={layout.dpi} onChange={(event) => onLayoutChange({ dpi: Number(event.target.value) })}>
-            {DPI_OPTIONS.map((dpi) => (
-              <option key={dpi} value={dpi}>
-                {dpi} dpi
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="toolbar-end">
+        <button type="button" className="icon-only" onClick={props.onToggleTheme} title={themeLabel} aria-label={themeLabel}>
+          <Icon name={props.theme === 'dark' ? 'sun' : 'moon'} />
+        </button>
+        <MenuButton
+          title="Mais opções"
+          className="icon-only"
+          items={[
+            { label: 'Salvar como…', shortcut: 'Ctrl+Shift+S', onSelect: props.onSaveAs },
+            { label: 'Atalhos do teclado', onSelect: props.onShortcuts },
+            { label: 'Sobre o GôndolaPro', onSelect: props.onAbout }
+          ]}
+        >
+          <Icon name="more" />
+        </MenuButton>
+        <button type="button" className="primary" onClick={props.onExport} title="Gerar o XML que o SysPDV importa (Ctrl+E)">
+          Exportar XML
+        </button>
       </div>
-
-      <button
-        type="button"
-        className="theme-toggle"
-        onClick={props.onToggleTheme}
-        title={props.theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-        aria-label={props.theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-      >
-        {props.theme === 'dark' ? '☀' : '☾'}
-      </button>
-      <button type="button" className="toolbar-about" onClick={props.onAbout} title="Sobre o GôndolaPro">
-        Sobre
-      </button>
     </header>
   )
 }

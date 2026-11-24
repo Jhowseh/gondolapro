@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { generateScript } from '../../core/generators'
+import { languageInfo } from '../../core/languages'
 import { createDefaultLayout, createElement, createText, duplicateElement } from '../../core/layout'
 import { toPrinterPayload } from '../../core/printerPayload'
 import { buildSyspdvExport, normalizeSyspdvCode } from '../../core/exporting'
@@ -15,6 +16,7 @@ import { ExportDialog, type ExportChoice } from './components/ExportDialog'
 import { ImportDialog, type ImportSource } from './components/ImportDialog'
 import { LabelCanvas } from './components/LabelCanvas'
 import { PropertiesPanel } from './components/PropertiesPanel'
+import { ShortcutsDialog } from './components/ShortcutsDialog'
 import { Toolbar } from './components/Toolbar'
 import { ZoomControl } from './components/ZoomControl'
 import { useHistory } from './hooks/useHistory'
@@ -28,6 +30,8 @@ interface Status {
 }
 
 const PRINTER_STORAGE_KEY = 'gondolapro.printer'
+
+const CODE_PANEL_STORAGE_KEY = 'gondolapro.codePanel'
 
 const NEW_ELEMENT_POSITION = { x: 2, y: 2 }
 
@@ -46,6 +50,22 @@ function readStoredPrinter(): string {
 function storePrinter(printer: string): void {
   try {
     localStorage.setItem(PRINTER_STORAGE_KEY, printer)
+  } catch {
+    return
+  }
+}
+
+function readStoredCodeExpanded(): boolean {
+  try {
+    return localStorage.getItem(CODE_PANEL_STORAGE_KEY) === 'open'
+  } catch {
+    return false
+  }
+}
+
+function storeCodeExpanded(expanded: boolean): void {
+  try {
+    localStorage.setItem(CODE_PANEL_STORAGE_KEY, expanded ? 'open' : 'closed')
   } catch {
     return
   }
@@ -82,7 +102,9 @@ export function App() {
   const [importSource, setImportSource] = useState<ImportSource | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-  const modalOpen = importSource !== null || exportOpen || aboutOpen
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [codeExpanded, setCodeExpanded] = useState(readStoredCodeExpanded)
+  const modalOpen = importSource !== null || exportOpen || aboutOpen || shortcutsOpen
 
   const dirty = savedLayout !== layout
   const selected = layout.elements.find((element) => element.id === selectedId) ?? null
@@ -288,6 +310,11 @@ export function App() {
     storePrinter(name)
   }, [])
 
+  const handleCodeExpandedChange = useCallback((expanded: boolean) => {
+    setCodeExpanded(expanded)
+    storeCodeExpanded(expanded)
+  }, [])
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (modalOpen) return
@@ -351,13 +378,13 @@ export function App() {
   return (
     <div className="app">
       <Toolbar
-        layout={layout}
+        name={layout.name}
         dirty={dirty}
         theme={theme}
         onToggleTheme={toggleTheme}
         canUndo={history.canUndo}
         canRedo={history.canRedo}
-        onLayoutChange={updateLayout}
+        onNameChange={(name) => updateLayout({ name })}
         onNew={handleNew}
         onOpen={() => void handleOpen()}
         onSave={() => void handleSave(false)}
@@ -365,6 +392,7 @@ export function App() {
         onExport={() => setExportOpen(true)}
         onUndo={history.undo}
         onRedo={history.redo}
+        onShortcuts={() => setShortcutsOpen(true)}
         onAbout={() => setAboutOpen(true)}
       />
 
@@ -389,8 +417,8 @@ export function App() {
             />
           </div>
           <div className="canvas-footer">
-            <span className="canvas-caption">
-              {layout.widthMm} × {layout.heightMm} mm · a prévia usa valores de exemplo no lugar das tags (edite em Propriedades)
+            <span className="canvas-caption" title="A prévia mostra valores de exemplo no lugar das tags do SysPDV.">
+              {layout.widthMm} × {layout.heightMm} mm · {languageInfo(layout.language).label} · {layout.dpi} dpi
             </span>
             <ZoomControl zoom={zoom} onChange={setZoom} />
           </div>
@@ -400,8 +428,10 @@ export function App() {
           element={selected}
           issues={issues}
           onChange={updateElement}
+          onLayoutChange={updateLayout}
           onDuplicate={duplicate}
           onRemove={removeElement}
+          onDeselect={() => setSelectedId(null)}
           onSampleChange={updateSample}
         />
       </main>
@@ -410,6 +440,8 @@ export function App() {
         layout={layout}
         script={script}
         issues={issues}
+        expanded={codeExpanded}
+        onExpandedChange={handleCodeExpandedChange}
         printers={printers}
         printer={printer}
         printing={printing}
@@ -433,6 +465,8 @@ export function App() {
       )}
 
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
+
+      {shortcutsOpen && <ShortcutsDialog onClose={() => setShortcutsOpen(false)} />}
 
       {status && <div className={`toast toast-${status.kind}`}>{status.text}</div>}
     </div>

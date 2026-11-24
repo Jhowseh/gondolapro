@@ -36,7 +36,7 @@ src/
   preload/index.ts      ponte segura (contextBridge) exposta como window.api
   renderer/             interface React
     src/App.tsx         estado da tela, atalhos, abrir/salvar/imprimir
-    src/components/     barra superior, paleta, prévia (Konva), propriedades, código
+    src/components/     barra superior, paleta, prévia (Konva), propriedades, barra de código
     src/hooks/          histórico de desfazer/refazer, tema e imagem do código de barras
     src/theme.ts        leitura, gravação e aplicação do tema claro/escuro
 resources/

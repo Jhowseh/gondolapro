@@ -28,21 +28,21 @@ O segundo comando baixa o executável do Electron; o npm 11+ não roda mais esse
 
 ## Como usar
 
-1. Ajuste **Largura**, **Altura** e **Espaço** (o espaço entre uma etiqueta e outra no rolo) na barra superior.
+1. Com nenhum elemento selecionado, o painel da direita mostra a **Etiqueta**: ajuste **Largura**, **Altura** e **Espaço** (o espaço entre uma etiqueta e outra no rolo). O nome do layout fica no topo, ao lado do logo.
 2. Escolha a **Linguagem** de acordo com a impressora do cliente:
    - **PPLA**: Argox OS-214, Elgin L42
    - **EPL / PPLB**: Zebra TLP 2844 e GC420t, Argox, Elgin, Honeywell
    - **ZPL**: Zebra GC420t e S4M, Elgin L42, Honeywell
-3. Adicione elementos pelo painel da esquerda. Os **Campos do SysPDV** entram como texto já com a tag (`</3>`, `</6>` etc.).
-4. Arraste os elementos na prévia (encaixam a cada 0,5 mm) ou digite posição e tamanho no painel da direita.
-5. Confira o painel **Verificação**: ele avisa sobre elementos fora da etiqueta, tags desconhecidas e códigos EAN inválidos.
+3. Adicione elementos pelo painel da esquerda. Os **Campos do SysPDV** ficam agrupados (clique no grupo para abrir) e têm uma busca; eles entram como texto já com a tag (`</3>`, `</6>` etc.).
+4. Arraste os elementos na prévia (encaixam a cada 0,5 mm) ou digite posição e tamanho no painel da direita. O **×** do painel (ou Esc) volta para as configurações da etiqueta.
+5. Confira a verificação na barra de baixo ("Nenhum problema" ou a quantidade de problemas). Ela avisa sobre elementos fora da etiqueta, tags desconhecidas e códigos EAN inválidos; clique nela para ver a lista. O código gerado fica escondido até você clicar em **Código**, e o app lembra se ele ficou aberto.
 6. Use **Imprimir teste** para mandar a etiqueta direto para a impressora, com valores de exemplo no lugar das tags.
 7. Leve o layout para o SysPDV de um destes jeitos:
    - **Exportar XML**: gera o mesmo XML que o SysPDV exporta, pronto para importar na tela de layouts de etiqueta. Pede o código (até 2 caracteres) e a descrição (até 40) do layout no SysPDV.
    - **Copiar código**: copia o script para colar direto na tela de layout do SysPDV.
 8. Salve o layout em um arquivo `.etq` para reaproveitar depois.
 
-O botão **☾ / ☀** no canto direito da barra superior alterna entre o tema escuro e o claro. A escolha fica salva no computador. O tema muda só a interface: a etiqueta na prévia continua branca com tinta preta, como sai na impressora.
+O botão de lua / sol no canto direito da barra superior alterna entre o tema escuro e o claro. A escolha fica salva no computador. O tema muda só a interface: a etiqueta na prévia continua branca com tinta preta, como sai na impressora.
 
 ### Abrir um layout que já existe
 
@@ -60,6 +60,8 @@ O que o GôndolaPro não sabe desenhar não é descartado. Essas linhas viram **
 
 ### Atalhos
 
+A lista também está no menu **⋯** da barra superior, em **Atalhos do teclado**.
+
 | Tecla | Ação |
 |---|---|
 | Setas | Move o elemento 0,5 mm (com Shift, 5 mm) |
@@ -74,7 +76,7 @@ O que o GôndolaPro não sabe desenhar não é descartado. Essas linhas viram **
 
 ### Cabeçalho e rodapé
 
-Cada linguagem tem um cabeçalho e um rodapé padrão (velocidade, temperatura, tamanho da etiqueta, quantidade). Eles podem ser editados pelo botão **Cabeçalho e rodapé** e ficam salvos junto com o layout. Aceitam as variáveis `{widthDots}`, `{heightDots}` e `{gapDots}`. Detalhes em [docs/printer-languages.md](docs/printer-languages.md).
+Cada linguagem tem um cabeçalho e um rodapé padrão (velocidade, temperatura, tamanho da etiqueta, quantidade). Eles podem ser editados pelo botão **Cabeçalho e rodapé**, que aparece com o código aberto, e ficam salvos junto com o layout. Aceitam as variáveis `{widthDots}`, `{heightDots}` e `{gapDots}`. Detalhes em [docs/printer-languages.md](docs/printer-languages.md).
 
 No código e nos editores, `<STX>` representa o caractere de controle STX (código 2), que o SysPDV grava no início dos comandos de sistema do PPLA. Ele é invisível, por isso aparece escrito assim na tela; ao copiar o código, o caractere real vai junto.
 
@@ -91,4 +93,4 @@ Versão 0.1. Os geradores seguem a sintaxe dos manuais e dos exemplos de layout 
 
 ## Créditos
 
-Desenvolvido por José Henrique, Erick Henrique e Eduardo Vasconcelos. Os mesmos créditos aparecem no botão **Sobre**, no canto direito da barra de ferramentas.
+Desenvolvido por José Henrique, Erick Henrique e Eduardo Vasconcelos. Os mesmos créditos aparecem em **Sobre o GôndolaPro**, no menu **⋯** da barra de ferramentas.
