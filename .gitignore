@@ -1,0 +1,14 @@
+node_modules/
+out/
+release/
+*.log
+.DS_Store
+
+.env
+.env.*
+*.local
+.claude/settings.local.json
+coverage/
+*.prn
+Thumbs.db
+docs/reference/*.pdf
