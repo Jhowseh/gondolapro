@@ -91,7 +91,32 @@ A largura do texto na prévia é estimada como `quantidade de caracteres × avan
 1. `App.tsx` guarda o layout em um histórico (`useHistory`), o que dá desfazer/refazer em qualquer alteração.
 2. A cada alteração, `generateScript` gera o código e `validateLayout` gera os avisos. Ambos são recalculados com `useMemo`. No PPLA, `generateScript` já coloca o STX que faltar no cabeçalho (ver [O caractere STX](printer-languages.md#o-caractere-stx)), então **Copiar código**, **Exportar XML** e **Imprimir teste** usam o mesmo script. A conversão para CRLF fica só em `printerPayload.ts`: `toClipboardText` para **Copiar código** e `toPrinterPayload` para a impressora.
 3. A prévia (`LabelCanvas`) usa as mesmas funções de medida do núcleo, então o que aparece na tela corresponde ao que os geradores calculam. Ela desenha os elementos na mesma ordem em que vão para o código (`emissionOrder`: linhas e caixas invertidas por último). Elementos em modo de inversão (`invertedElementIds`) são desenhados com mistura "difference", que reproduz o XOR da impressora. A grade é desenhada por cima com mistura "multiply", para não aparecer dentro das áreas pretas.
-4. **Imprimir teste** gera o script com valores de exemplo (`withSamples`), passa por `toPrinterPayload` e manda para o processo principal, que grava os bytes em Latin-1 num arquivo temporário e chama `resources/raw-print.ps1`.
+4. **Imprimir teste** gera o script com valores de exemplo (`withSamples`), passa por `toPrinterPayload` e manda para o processo principal, que envia os bytes em Latin-1 direto para o spooler do Windows (ver [Impressão de teste](#impressão-de-teste)).
+
+## Impressão de teste
+
+O envio fica em `src/main/rawPrinter.ts` e `resources/raw-print.ps1`. O Windows não tem um comando pronto para mandar bytes crus ao spooler, então o script define uma classe C# (`GondolaProRawPrinter`) que chama `OpenPrinter`, `StartDocPrinter` (tipo `RAW`) e `WritePrinter` da `winspool.drv`.
+
+Para a impressão sair rápido, o custo de preparar isso é pago uma vez só:
+
+1. **Processo único do PowerShell.** O primeiro **Imprimir teste** abre um `powershell.exe` escondido, que fica aberto esperando pedidos pela entrada padrão. Os pedidos seguintes reaproveitam o mesmo processo, sem pagar de novo a partida do PowerShell. Depois de 5 minutos sem impressão o processo é encerrado, e o próximo pedido abre outro. Ao fechar o app ele também é encerrado (`stopRawPrinter`, no `will-quit`).
+2. **Classe C# compilada em cache.** Compilar o C# com `Add-Type` leva de 1 a 3 segundos. Na primeira vez o script compila para `%LOCALAPPDATA%\GondolaPro\RawPrinter-<hash>.dll` e, nas próximas, só carrega essa DLL. O `<hash>` vem do código C#, então uma versão nova do app com outra classe gera outra DLL, sem usar a antiga por engano. Se a DLL estiver corrompida ou não puder ser gravada (pasta sem permissão, outra instância usando o arquivo), o script compila em memória, como antes, e a impressão sai do mesmo jeito.
+
+Protocolo entre o processo principal e o PowerShell, uma linha por mensagem:
+
+- Ao iniciar, o script escreve `READY cache`, `READY compiled` ou `READY memory` (de onde veio a classe). O processo principal ignora essa linha, mas ela ajuda a depurar.
+- Cada pedido é `<impressora> <dados>`, os dois em base64: o nome da impressora em UTF-8 e o script já convertido em bytes Latin-1 (`Buffer.from(payload, 'latin1')`). O base64 garante que os bytes que chegam à impressora são exatamente os gerados, sem passar pela codificação do console.
+- A resposta é `OK` ou `ERR <mensagem em base64 UTF-8>`. A mensagem é a do Windows (por exemplo, "O nome da impressora é inválido") e aparece no aviso de falha da interface.
+
+Os pedidos são atendidos na ordem em que chegam. Se o PowerShell não responder em 60 segundos, ou terminar por qualquer motivo, os pedidos pendentes falham com a mensagem de erro e o próximo pedido abre um processo novo.
+
+Para testar o script sem o app (com uma impressora que não existe, nada é impresso):
+
+```powershell
+$printer = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('Nao existe'))
+$data = [Convert]::ToBase64String([Text.Encoding]::GetEncoding(28591).GetBytes("teste`n"))
+"$printer $data" | powershell -NoProfile -ExecutionPolicy Bypass -File resources\raw-print.ps1
+```
 
 ## Tema claro e escuro
 

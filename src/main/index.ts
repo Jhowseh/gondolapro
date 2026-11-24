@@ -3,7 +3,7 @@ import { basename, join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, type IpcMainInvokeEvent, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
 import { LAYOUT_FILE_EXTENSION } from '../core/serialization'
 import type { ExportRequest, SaveRequest, Theme } from '../preload'
-import { printRaw } from './rawPrinter'
+import { printRaw, stopRawPrinter } from './rawPrinter'
 import { resourcePath } from './resources'
 
 const LAYOUT_FILTER = { name: 'Layout GôndolaPro', extensions: [LAYOUT_FILE_EXTENSION] }
@@ -122,3 +122,5 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   app.quit()
 })
+
+app.on('will-quit', stopRawPrinter)
