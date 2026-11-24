@@ -12,3 +12,6 @@ coverage/
 *.prn
 Thumbs.db
 docs/reference/*.pdf
+
+manual/img/
+__pycache__/

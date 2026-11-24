@@ -82,6 +82,7 @@ No código e nos editores, `<STX>` representa o caractere de controle STX (códi
 
 ## Documentação
 
+- [docs/user-manual.pdf](docs/user-manual.pdf): manual do usuário, no mesmo padrão visual do manual do NFCeHub. Para gerar de novo, com telas atualizadas, rode `manual\build-manual.ps1` (precisa de Python com `pip install -r manual\requirements.txt`); com `-SkipScreens` ele só refaz o PDF
 - [docs/architecture.md](docs/architecture.md): organização do código, modelo de dados e convenções
 - [docs/printer-languages.md](docs/printer-languages.md): como cada elemento vira PPLA, EPL e ZPL, e o que ainda precisa ser calibrado
 - [docs/syspdv-tags.md](docs/syspdv-tags.md): legenda completa das tags do SysPDV, inclusive as que levam parâmetro
