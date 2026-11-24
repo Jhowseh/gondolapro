@@ -18,6 +18,7 @@ interface ToolbarProps {
   onExport: () => void
   onUndo: () => void
   onRedo: () => void
+  onAbout: () => void
 }
 
 export function Toolbar(props: ToolbarProps) {
@@ -85,6 +86,9 @@ export function Toolbar(props: ToolbarProps) {
         aria-label={props.theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
       >
         {props.theme === 'dark' ? '☀' : '☾'}
+      </button>
+      <button type="button" className="toolbar-about" onClick={props.onAbout} title="Sobre o GôndolaPro">
+        Sobre
       </button>
     </header>
   )

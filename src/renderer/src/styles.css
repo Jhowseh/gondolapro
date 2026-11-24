@@ -246,6 +246,10 @@ h3 {
   width: 160px;
 }
 
+.toolbar-about {
+  align-self: flex-end;
+}
+
 .theme-toggle {
   align-self: flex-end;
   width: 34px;
@@ -690,6 +694,108 @@ h3 {
 
 .export-fields {
   grid-template-columns: 72px 1fr;
+}
+
+.modal-about {
+  width: min(720px, calc(100vw - 48px));
+}
+
+.about-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.about-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.about-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.about-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.about-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.about-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+
+.about-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.about-facts div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.about-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.about-description {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.about-developers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about-developers li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.about-initials {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .about-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 .import-body {

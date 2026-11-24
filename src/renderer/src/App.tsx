@@ -8,6 +8,7 @@ import { extractCandidates, normalizeScript, summarizeImport, type ImportResult 
 import { LAYOUT_FILE_EXTENSION, parseLayout, serializeLayout } from '../../core/serialization'
 import type { DrawableType, LabelElement, LabelLayout, Template } from '../../core/types'
 import { validateLayout } from '../../core/validation'
+import { AboutDialog } from './components/AboutDialog'
 import { CodePanel } from './components/CodePanel'
 import { ElementPalette } from './components/ElementPalette'
 import { ExportDialog, type ExportChoice } from './components/ExportDialog'
@@ -80,7 +81,8 @@ export function App() {
   const [status, setStatus] = useState<Status | null>(null)
   const [importSource, setImportSource] = useState<ImportSource | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
-  const modalOpen = importSource !== null || exportOpen
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const modalOpen = importSource !== null || exportOpen || aboutOpen
 
   const dirty = savedLayout !== layout
   const selected = layout.elements.find((element) => element.id === selectedId) ?? null
@@ -363,6 +365,7 @@ export function App() {
         onExport={() => setExportOpen(true)}
         onUndo={history.undo}
         onRedo={history.redo}
+        onAbout={() => setAboutOpen(true)}
       />
 
       <main className="workspace">
@@ -428,6 +431,8 @@ export function App() {
           onExport={(choice) => void handleExport(choice)}
         />
       )}
+
+      {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
 
       {status && <div className={`toast toast-${status.kind}`}>{status.text}</div>}
     </div>
