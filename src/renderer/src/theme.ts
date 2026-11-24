@@ -1,6 +1,7 @@
-export type Theme = 'light' | 'dark'
+import type { Theme } from '../../preload'
+import { readSetting, STORAGE_KEYS, writeSetting } from './storage'
 
-const THEME_STORAGE_KEY = 'gondolapro.theme'
+export type { Theme }
 
 function isTheme(value: unknown): value is Theme {
   return value === 'light' || value === 'dark'
@@ -15,21 +16,12 @@ function systemTheme(): Theme {
 }
 
 export function readStoredTheme(): Theme {
-  try {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    if (isTheme(stored)) return stored
-  } catch {
-    return systemTheme()
-  }
-  return systemTheme()
+  const stored = readSetting(STORAGE_KEYS.theme)
+  return isTheme(stored) ? stored : systemTheme()
 }
 
 export function storeTheme(theme: Theme): void {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, theme)
-  } catch {
-    return
-  }
+  writeSetting(STORAGE_KEYS.theme, theme)
 }
 
 export function applyTheme(theme: Theme): void {

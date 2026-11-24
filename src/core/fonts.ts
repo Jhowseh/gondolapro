@@ -1,6 +1,6 @@
-import type { FontOverride, Language } from './types'
+import type { FontOverride, Language, TextElement } from './types'
 
-export interface BitmapFont {
+interface BitmapFont {
   id: string
   heightDots: number
   advanceDots: number
@@ -17,7 +17,7 @@ export interface ResolvedFont {
 
 export const MONO_ADVANCE_RATIO = 0.55
 
-export const ZPL_ADVANCE_RATIO = 0.6
+const ZPL_ADVANCE_RATIO = 0.6
 
 const ZPL_MIN_HEIGHT = 10
 
@@ -51,7 +51,7 @@ const MULTIPLIER_LIMITS: Record<BitmapLanguage, { horizontal: number; vertical: 
   epl: { horizontal: 6, vertical: 9 }
 }
 
-export function bitmapFont(language: BitmapLanguage, id: string): BitmapFont | undefined {
+function bitmapFont(language: BitmapLanguage, id: string): BitmapFont | undefined {
   return BITMAP_FONTS[language].find((font) => font.id === id)
 }
 
@@ -83,8 +83,12 @@ function resolveOverride(override: FontOverride): ResolvedFont {
   }
 }
 
+export function fontOverrideFor(element: TextElement, language: Language): FontOverride | undefined {
+  return element.font?.language === language ? element.font : undefined
+}
+
 export function resolveFont(language: Language, targetHeightDots: number, override?: FontOverride): ResolvedFont {
-  if (override && override.language === language) {
+  if (override?.language === language) {
     return resolveOverride(override)
   }
 

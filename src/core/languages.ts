@@ -1,6 +1,6 @@
 import type { Language } from './types'
 
-export interface LanguageInfo {
+interface LanguageInfo {
   id: Language
   label: string
   printers: string

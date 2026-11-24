@@ -1,8 +1,8 @@
 import { languageInfo } from './languages'
-import { describeElement } from './layout'
+import { contentOf, describeElement } from './layout'
 import { elementBox, textInkBox } from './measure'
 import { fieldByCode, findTagUsages, findTags } from './syspdvFields'
-import type { Box, LabelElement, LabelLayout, LineElement, TextElement } from './types'
+import type { Box, LabelLayout, LineElement, TextElement } from './types'
 
 export interface LayoutIssue {
   elementId?: string
@@ -62,10 +62,6 @@ function lineIssues(element: TextElement, layout: LabelLayout, name: string): La
           ? `${name} não cabe inteiro na faixa em que está: uma parte sai para fora dela.`
           : `${name} é cortado por uma linha.`
     }))
-}
-
-function contentOf(element: LabelElement): string | null {
-  return element.type === 'text' || element.type === 'barcode' ? element.content : null
 }
 
 export function validateLayout(layout: LabelLayout): LayoutIssue[] {

@@ -1,11 +1,8 @@
 import { parseMultiplierCode } from '../fonts'
 import { PPLA_ROTATION_ANCHOR, PPLA_ROTATION_CODE, pplaUnitMm } from '../generators/ppla'
-import type { Corner } from '../generators/anchor'
-import { createBarcode, createBox, createLine, createRaw, createText } from '../layout'
-import { elementBox, measureText } from '../measure'
+import { createBarcode, createBox, createLine, createRaw } from '../layout'
 import type { LabelElement, LabelLayout } from '../types'
-import { dotsToMm } from '../units'
-import { baseLayout, invertRotationCodes, splitScriptLines, splitSections, topLeftFromCorner, type ImportFrame, type ImportResult } from './shared'
+import { baseLayout, importedText, invertRotationCodes, placeAtCorner as place, splitScriptLines, splitSections, type ImportFrame, type ImportResult } from './shared'
 
 const ELEMENT_PATTERN = /^([1-4])([0-9A-Za-z])([0-9A-Za-z])([0-9A-Za-z])(\d{3})(\d{4})(\d{4})(.*)$/
 
@@ -23,11 +20,6 @@ export function isPplaElementLine(line: string): boolean {
   return ELEMENT_PATTERN.test(line)
 }
 
-function place<T extends LabelElement>(element: T, layout: LabelLayout, point: { x: number; y: number }, corner: Corner): T {
-  const box = elementBox(element, layout)
-  return { ...element, ...topLeftFromCorner(point, corner, box.width, box.height) }
-}
-
 function parseElement(line: string, layout: LabelLayout, unitMm: number): LabelElement | null {
   const match = ELEMENT_PATTERN.exec(line)
   if (!match) return null
@@ -37,9 +29,8 @@ function parseElement(line: string, layout: LabelLayout, unitMm: number): LabelE
   const point = { x: Number(column) * unitMm, y: layout.heightMm - Number(row) * unitMm }
 
   if (TEXT_FONTS.test(kind)) {
-    const draft = createText({ rotation, content, heightMm: 1, font: { language: 'ppla', id: kind, width: first, height: second, extra: size } })
-    const heightMm = dotsToMm(measureText(draft, layout).height, layout.dpi)
-    return place({ ...draft, heightMm }, layout, point, PPLA_ROTATION_ANCHOR[rotation])
+    const text = importedText(rotation, content, { language: 'ppla', id: kind, width: first, height: second, extra: size }, layout)
+    return place(text, layout, point, PPLA_ROTATION_ANCHOR[rotation])
   }
 
   if (BARCODE_KINDS.test(kind)) {

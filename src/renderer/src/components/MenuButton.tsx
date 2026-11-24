@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEscapeKey } from '../hooks/useEscapeKey'
 
-export interface MenuItem {
+interface MenuItem {
   label: string
   shortcut?: string
   onSelect: () => void
@@ -17,21 +18,18 @@ export function MenuButton({ title, className = '', children, items }: MenuButto
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
+  const close = useCallback(() => setOpen(false), [])
+
+  useEscapeKey(close, open)
+
   useEffect(() => {
     if (!open) return
     const handleMouseDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (!rootRef.current?.contains(event.target as Node)) close()
     }
     window.addEventListener('mousedown', handleMouseDown)
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('mousedown', handleMouseDown)
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
+    return () => window.removeEventListener('mousedown', handleMouseDown)
+  }, [open, close])
 
   return (
     <div className="menu" ref={rootRef}>
@@ -54,7 +52,7 @@ export function MenuButton({ title, className = '', children, items }: MenuButto
               type="button"
               role="menuitem"
               onClick={() => {
-                setOpen(false)
+                close()
                 item.onSelect()
               }}
             >

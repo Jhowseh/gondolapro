@@ -1,7 +1,8 @@
+import { fontOverrideFor } from '../fonts'
 import { emissionOrder } from '../layout'
 import { elementBox, measureBarcode, measureText, sanitizeContent, wideBarDots } from '../measure'
 import type { BarcodeElement, BoxElement, LabelElement, LabelLayout, LineElement, Rotation, TextElement } from '../types'
-import { mmToDots } from '../units'
+import { mmToDots, mmToVisibleDots } from '../units'
 import { cornerOf, type Corner } from './anchor'
 
 export const EPL_ROTATION_CODE: Record<Rotation, string> = { 0: '0', 90: '1', 180: '2', 270: '3' }
@@ -13,7 +14,7 @@ export const EPL_ROTATION_ANCHOR: Record<Rotation, Corner> = {
   270: 'bottom-left'
 }
 
-export function escapeEpl(content: string): string {
+function escapeEpl(content: string): string {
   return sanitizeContent(content).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 }
 
@@ -23,7 +24,7 @@ function anchor(element: LabelElement, layout: LabelLayout, corner: Corner): str
 }
 
 function textLine(element: TextElement, layout: LabelLayout): string {
-  const override = element.font?.language === 'epl' ? element.font : undefined
+  const override = fontOverrideFor(element, 'epl')
   const { font } = measureText(element, layout)
   const multipliers = override ? `${override.width},${override.height}` : `${font.hMult},${font.vMult}`
   return `A${anchor(element, layout, EPL_ROTATION_ANCHOR[element.rotation])},${EPL_ROTATION_CODE[element.rotation]},${font.fontId},${multipliers},N,"${escapeEpl(element.content)}"`
@@ -38,8 +39,8 @@ function barcodeLine(element: BarcodeElement, layout: LabelLayout): string {
 }
 
 function lineLine(element: LineElement, layout: LabelLayout): string {
-  const width = Math.max(1, mmToDots(element.widthMm, layout.dpi))
-  const height = Math.max(1, mmToDots(element.heightMm, layout.dpi))
+  const width = mmToVisibleDots(element.widthMm, layout.dpi)
+  const height = mmToVisibleDots(element.heightMm, layout.dpi)
   return `${element.invert ? 'LE' : 'LO'}${anchor(element, layout, 'top-left')},${width},${height}`
 }
 
@@ -48,7 +49,7 @@ function boxLines(element: BoxElement, layout: LabelLayout): string[] {
   const y = mmToDots(element.y, layout.dpi)
   const width = mmToDots(element.widthMm, layout.dpi)
   const height = mmToDots(element.heightMm, layout.dpi)
-  const thickness = Math.max(1, mmToDots(element.thicknessMm, layout.dpi))
+  const thickness = mmToVisibleDots(element.thicknessMm, layout.dpi)
   if (!element.invert) {
     return [`X${x},${y},${thickness},${x + width},${y + height}`]
   }
@@ -71,7 +72,7 @@ function eplLines(element: LabelElement, layout: LabelLayout): string[] {
     case 'box':
       return boxLines(element, layout)
     case 'raw':
-      return element.language === 'epl' ? [element.content] : []
+      return [element.content]
   }
 }
 

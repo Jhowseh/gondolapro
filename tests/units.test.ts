@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { resolveFont } from '../src/core/fonts'
-import { mmToDots, mmToHundredthsInch, pad } from '../src/core/units'
+import { mmToDots, mmToVisibleDots, pad } from '../src/core/units'
 
 describe('units', () => {
   it('converts millimetres to printer dots at 203 dpi', () => {
@@ -9,9 +9,9 @@ describe('units', () => {
     expect(mmToDots(3, 203)).toBe(24)
   })
 
-  it('converts millimetres to PPLA hundredths of an inch', () => {
-    expect(mmToHundredthsInch(25.4)).toBe(100)
-    expect(mmToHundredthsInch(10)).toBe(39)
+  it('never shrinks a visible stroke below one dot', () => {
+    expect(mmToVisibleDots(0.01, 203)).toBe(1)
+    expect(mmToVisibleDots(3, 203)).toBe(24)
   })
 
   it('pads numbers with zeros', () => {

@@ -47,7 +47,6 @@
   --accent-soft: #24304f;
   --primary: #3d63e0;
   --primary-hover: #4d72ee;
-  --on-primary: #ffffff;
   --danger: #f97066;
   --danger-soft: #3d1f1f;
   --success: #47cd89;
@@ -55,15 +54,12 @@
   --warning: #fdb022;
   --warning-soft: #3a2a0c;
   --code-bg: #0b0e14;
-  --code-text: #e2e8f0;
   --code-border: #2a303d;
   --overlay: rgba(0, 0, 0, 0.6);
   --shadow-strong: rgba(0, 0, 0, 0.55);
   --shadow-soft: rgba(0, 0, 0, 0.4);
   --toast-bg: #2f3646;
   --toast-success-bg: #087443;
-  --toast-error-bg: #b42318;
-  --toast-text: #ffffff;
   color-scheme: dark;
 }
 
@@ -170,6 +166,11 @@ button:focus-visible {
 
 textarea {
   resize: vertical;
+}
+
+textarea,
+code,
+kbd {
   font-family: var(--mono);
 }
 
@@ -324,7 +325,6 @@ button.with-icon {
 }
 
 kbd {
-  font-family: var(--mono);
   font-size: 11px;
   color: var(--text-muted);
 }
@@ -443,10 +443,6 @@ kbd {
   gap: 8px;
 }
 
-.panel-section h2 {
-  margin: 0;
-}
-
 .panel-header {
   display: flex;
   align-items: center;
@@ -454,7 +450,9 @@ kbd {
   min-height: 26px;
 }
 
-.panel-header h2 {
+.panel-section h2,
+.panel-header h2,
+.modal-header h2 {
   margin: 0;
 }
 
@@ -568,7 +566,6 @@ kbd {
 }
 
 .field-list code {
-  font-family: var(--mono);
   font-size: 11px;
   color: var(--accent);
   min-width: 38px;
@@ -783,12 +780,9 @@ kbd {
   overflow-y: auto;
 }
 
-.issues .ok {
-  margin: 0;
-  padding: 8px 10px;
+.ok {
   background: var(--success-soft);
   color: var(--success);
-  border-radius: 6px;
 }
 
 .raw-list {
@@ -816,7 +810,6 @@ kbd {
 }
 
 .raw-list code {
-  font-family: var(--mono);
   font-size: 11.5px;
 }
 
@@ -852,7 +845,6 @@ kbd {
 }
 
 .modal-header h2 {
-  margin: 0;
   font-size: 14px;
   text-transform: none;
   letter-spacing: 0;
@@ -1037,6 +1029,7 @@ kbd {
   color: var(--accent);
 }
 
+.ok,
 .warning,
 .error {
   margin: 0;
@@ -1096,7 +1089,6 @@ kbd {
 }
 
 .sample-fields .field-label code {
-  font-family: var(--mono);
   color: var(--accent);
 }
 

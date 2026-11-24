@@ -1,7 +1,21 @@
 import { restoreControlCodes, showControlCodes } from '../../../core/controlCodes'
+import { fontOverrideFor } from '../../../core/fonts'
 import { DPI_OPTIONS, LANGUAGES, languageInfo } from '../../../core/languages'
+import { contentOf, isForeignRaw } from '../../../core/layout'
 import { measureText } from '../../../core/measure'
-import type { BarcodeElement, BoxElement, LabelElement, LabelLayout, Language, LineElement, RawElement, Rotation, Symbology, TextElement } from '../../../core/types'
+import {
+  ROTATIONS,
+  type BarcodeElement,
+  type BoxElement,
+  type LabelElement,
+  type LabelLayout,
+  type Language,
+  type LineElement,
+  type RawElement,
+  type Rotation,
+  type Symbology,
+  type TextElement
+} from '../../../core/types'
 import { dotsToMm } from '../../../core/units'
 import type { LayoutIssue } from '../../../core/validation'
 import { Icon } from './Icon'
@@ -22,8 +36,6 @@ interface PropertiesPanelProps {
   onDeselect: () => void
   onSampleChange: (code: string, value: string) => void
 }
-
-const ROTATIONS: Rotation[] = [0, 90, 180, 270]
 
 const TITLES: Record<LabelElement['type'], string> = {
   text: 'Texto',
@@ -50,7 +62,7 @@ function RotationField({ value, onChange }: { value: Rotation; onChange: (rotati
 
 function TextProperties({ element, layout, onChange }: { element: TextElement; layout: LabelLayout; onChange: (patch: Partial<TextElement>) => void }) {
   const { font } = measureText(element, layout)
-  const imported = element.font?.language === layout.language
+  const imported = fontOverrideFor(element, layout.language) !== undefined
   const realHeight = dotsToMm(font.heightDots, layout.dpi).toLocaleString('pt-BR', { maximumFractionDigits: 1 })
   const fontDescription =
     layout.language === 'zpl'
@@ -87,7 +99,7 @@ function TextProperties({ element, layout, onChange }: { element: TextElement; l
 }
 
 function RawProperties({ element, layout, onChange }: { element: RawElement; layout: LabelLayout; onChange: (patch: Partial<RawElement>) => void }) {
-  const ignored = element.language !== layout.language
+  const ignored = isForeignRaw(element, layout.language)
   return (
     <>
       <label className="field">
@@ -173,7 +185,7 @@ function BoxProperties({ element, onChange }: { element: BoxElement; onChange: (
 }
 
 function contentsOf(elements: LabelElement[]): string[] {
-  return elements.flatMap((item) => (item.type === 'text' || item.type === 'barcode' ? [item.content] : []))
+  return elements.map(contentOf).filter((content) => content !== null)
 }
 
 function LabelProperties({

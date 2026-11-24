@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { generateScript } from '../../core/generators'
 import { languageInfo } from '../../core/languages'
-import { createDefaultLayout, createElement, createText, duplicateElement } from '../../core/layout'
+import { createDefaultLayout, createElement, createText, duplicateElement, withSamples, withTemplate } from '../../core/layout'
 import { toPrinterPayload } from '../../core/printerPayload'
 import { buildSyspdvExport, normalizeSyspdvCode } from '../../core/exporting'
-import { cleanSamples } from '../../core/syspdvFields'
 import { extractCandidates, normalizeScript, summarizeImport, type ImportResult } from '../../core/importing'
 import { LAYOUT_FILE_EXTENSION, parseLayout, serializeLayout } from '../../core/serialization'
-import type { DrawableType, LabelElement, LabelLayout, Template } from '../../core/types'
+import type { LabelElement, LabelLayout, Template } from '../../core/types'
 import { validateLayout } from '../../core/validation'
 import { AboutDialog } from './components/AboutDialog'
 import { CodePanel } from './components/CodePanel'
@@ -21,6 +20,8 @@ import { Toolbar } from './components/Toolbar'
 import { ZoomControl } from './components/ZoomControl'
 import { useHistory } from './hooks/useHistory'
 import { useTheme } from './hooks/useTheme'
+import { readSetting, STORAGE_KEYS, writeSetting } from './storage'
+import { errorMessage } from './text'
 
 type StatusKind = 'info' | 'success' | 'error'
 
@@ -29,47 +30,11 @@ interface Status {
   text: string
 }
 
-const PRINTER_STORAGE_KEY = 'gondolapro.printer'
-
-const CODE_PANEL_STORAGE_KEY = 'gondolapro.codePanel'
-
-const NEW_ELEMENT_POSITION = { x: 2, y: 2 }
-
 const ARROW_STEP_MM = 0.5
 
 const STATUS_DURATION_MS = 4000
 
-function readStoredPrinter(): string {
-  try {
-    return localStorage.getItem(PRINTER_STORAGE_KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-function storePrinter(printer: string): void {
-  try {
-    localStorage.setItem(PRINTER_STORAGE_KEY, printer)
-  } catch {
-    return
-  }
-}
-
-function readStoredCodeExpanded(): boolean {
-  try {
-    return localStorage.getItem(CODE_PANEL_STORAGE_KEY) === 'open'
-  } catch {
-    return false
-  }
-}
-
-function storeCodeExpanded(expanded: boolean): void {
-  try {
-    localStorage.setItem(CODE_PANEL_STORAGE_KEY, expanded ? 'open' : 'closed')
-  } catch {
-    return
-  }
-}
+const CODE_PANEL_OPEN = 'open'
 
 function isEditableTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
@@ -83,10 +48,6 @@ function safeFileName(name: string): string {
   return name.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'etiqueta'
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
-
 export function App() {
   const { theme, toggleTheme } = useTheme()
   const history = useHistory<LabelLayout>(createDefaultLayout)
@@ -96,14 +57,14 @@ export function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [zoom, setZoom] = useState(7)
   const [printers, setPrinters] = useState<string[]>([])
-  const [printer, setPrinter] = useState(readStoredPrinter)
+  const [printer, setPrinter] = useState(() => readSetting(STORAGE_KEYS.printer) ?? '')
   const [printing, setPrinting] = useState(false)
   const [status, setStatus] = useState<Status | null>(null)
   const [importSource, setImportSource] = useState<ImportSource | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const [codeExpanded, setCodeExpanded] = useState(readStoredCodeExpanded)
+  const [codeExpanded, setCodeExpanded] = useState(() => readSetting(STORAGE_KEYS.codePanel) === CODE_PANEL_OPEN)
   const modalOpen = importSource !== null || exportOpen || aboutOpen || shortcutsOpen
 
   const dirty = savedLayout !== layout
@@ -170,40 +131,29 @@ export function App() {
   )
 
   const updateSample = useCallback(
-    (code: string, value: string) =>
-      history.set((current) => {
-        const samples = cleanSamples({ ...current.samples, [code]: value })
-        const next: LabelLayout = { ...current, samples }
-        if (Object.keys(samples).length === 0) delete next.samples
-        return next
-      }),
+    (code: string, value: string) => history.set((current) => withSamples(current, { ...current.samples, [code]: value })),
     [history.set]
   )
 
-  const updateTemplate = useCallback(
-    (template: Template | null) =>
-      history.set((current) => {
-        const templates = { ...current.templates }
-        if (template) {
-          templates[current.language] = template
-        } else {
-          delete templates[current.language]
-        }
-        return { ...current, templates }
-      }),
-    [history.set]
-  )
+  const updateTemplate = useCallback((template: Template | null) => history.set((current) => withTemplate(current, template)), [history.set])
+
+  const moveElement = useCallback((id: string, x: number, y: number) => updateElement(id, { x, y }), [updateElement])
 
   const confirmDiscard = useCallback(() => !dirty || window.confirm('Existem alterações não salvas. Deseja descartá-las?'), [dirty])
 
+  const loadDocument = useCallback(
+    (next: LabelLayout, path: string | null, saved: boolean) => {
+      history.reset(next)
+      if (saved) setSavedLayout(next)
+      setFilePath(path)
+      setSelectedId(null)
+    },
+    [history.reset]
+  )
+
   const handleNew = useCallback(() => {
-    if (!confirmDiscard()) return
-    const fresh = createDefaultLayout()
-    history.reset(fresh)
-    setSavedLayout(fresh)
-    setFilePath(null)
-    setSelectedId(null)
-  }, [confirmDiscard, history.reset])
+    if (confirmDiscard()) loadDocument(createDefaultLayout(), null, true)
+  }, [confirmDiscard, loadDocument])
 
   const handleOpen = useCallback(async () => {
     if (!confirmDiscard()) return
@@ -211,11 +161,7 @@ export function App() {
       const file = await window.api.openFile()
       if (!file) return
       if (isLayoutFile(file.fileName)) {
-        const opened = parseLayout(new TextDecoder('utf-8').decode(file.bytes))
-        history.reset(opened)
-        setSavedLayout(opened)
-        setFilePath(file.path)
-        setSelectedId(null)
+        loadDocument(parseLayout(new TextDecoder('utf-8').decode(file.bytes)), file.path, true)
         notify('success', 'Layout aberto.')
         return
       }
@@ -223,11 +169,11 @@ export function App() {
     } catch (error) {
       notify('error', errorMessage(error))
     }
-  }, [confirmDiscard, history.reset, notify])
+  }, [confirmDiscard, loadDocument, notify])
 
   const handlePaste = useCallback(
     (text: string) => {
-      if (!text.trim() || !confirmDiscard()) return
+      if (!confirmDiscard()) return
       setImportSource({ label: 'Código colado', candidates: [{ label: 'Código colado', name: 'Layout importado', script: normalizeScript(text) }] })
     },
     [confirmDiscard]
@@ -235,15 +181,13 @@ export function App() {
 
   const handleImport = useCallback(
     (result: ImportResult) => {
-      history.reset(result.layout)
-      setFilePath(null)
-      setSelectedId(null)
+      loadDocument(result.layout, null, false)
       setImportSource(null)
       const summary = summarizeImport(result)
       const kept = summary.raw > 0 ? ` e ${summary.raw} sem prévia` : ''
       notify(result.warnings.length > 0 ? 'info' : 'success', `Layout importado: ${summary.drawable} elementos com prévia${kept}. ${result.warnings.join(' ')}`.trim())
     },
-    [history.reset, notify]
+    [loadDocument, notify]
   )
 
   const handleSave = useCallback(
@@ -307,12 +251,12 @@ export function App() {
 
   const handlePrinterChange = useCallback((name: string) => {
     setPrinter(name)
-    storePrinter(name)
+    writeSetting(STORAGE_KEYS.printer, name)
   }, [])
 
   const handleCodeExpandedChange = useCallback((expanded: boolean) => {
     setCodeExpanded(expanded)
-    storeCodeExpanded(expanded)
+    writeSetting(STORAGE_KEYS.codePanel, expanded ? CODE_PANEL_OPEN : 'closed')
   }, [])
 
   useEffect(() => {
@@ -402,8 +346,8 @@ export function App() {
           language={layout.language}
           selectedId={selectedId}
           onSelect={setSelectedId}
-          onAdd={(type: DrawableType) => addElement(createElement(type, NEW_ELEMENT_POSITION))}
-          onAddField={(tagText) => addElement(createText({ ...NEW_ELEMENT_POSITION, content: tagText }))}
+          onAdd={(type) => addElement(createElement(type))}
+          onAddField={(tagText) => addElement(createText({ content: tagText }))}
         />
         <section className="canvas-area">
           <div className="canvas-scroll">
@@ -413,7 +357,7 @@ export function App() {
               zoom={zoom}
               invalidIds={invalidIds}
               onSelect={setSelectedId}
-              onMove={(id, x, y) => updateElement(id, { x, y })}
+              onMove={moveElement}
             />
           </div>
           <div className="canvas-footer">

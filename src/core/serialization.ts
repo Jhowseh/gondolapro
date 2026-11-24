@@ -1,5 +1,5 @@
 import { isLanguage } from './languages'
-import { cleanSamples } from './syspdvFields'
+import { withSamples } from './layout'
 import type { LabelLayout } from './types'
 
 export const LAYOUT_FILE_EXTENSION = 'etq'
@@ -69,7 +69,5 @@ export function parseLayout(text: string): LabelLayout {
     ...(layout as unknown as LabelLayout),
     templates: isRecord(layout.templates) ? (layout.templates as LabelLayout['templates']) : {}
   }
-  delete parsed.samples
-  const samples = isRecord(layout.samples) ? cleanSamples(stringEntries(layout.samples)) : {}
-  return Object.keys(samples).length > 0 ? { ...parsed, samples } : parsed
+  return withSamples(parsed, isRecord(layout.samples) ? stringEntries(layout.samples) : {})
 }

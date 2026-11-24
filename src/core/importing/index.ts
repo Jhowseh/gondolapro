@@ -9,7 +9,7 @@ export type { ImportCandidate } from './sources'
 export { extractCandidates, normalizeScript } from './sources'
 export type { ImportFrame, ImportResult } from './shared'
 
-export interface ImportSummary {
+interface ImportSummary {
   drawable: number
   raw: number
 }

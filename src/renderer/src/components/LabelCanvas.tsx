@@ -1,19 +1,19 @@
 import type Konva from 'konva'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { Group, Image as KonvaImage, Layer, Line, Rect, Shape, Stage, Text } from 'react-konva'
 import { MONO_ADVANCE_RATIO } from '../../../core/fonts'
 import { emissionOrder, isDrawable } from '../../../core/layout'
 import { invertedElementIds } from '../../../core/printModes'
 import { contentSizeMm, elementBox, measureBarcode, measureText } from '../../../core/measure'
-import type { BarcodeElement, BoxElement, LabelElement, LabelLayout, LineElement, RawElement, Rotation, TextElement } from '../../../core/types'
-
-type DrawableElement = Exclude<LabelElement, RawElement>
+import type { BarcodeElement, BoxElement, DrawableElement, LabelElement, LabelLayout, LineElement, Rotation, TextElement } from '../../../core/types'
 import { clamp, dotsPerMm, snap } from '../../../core/units'
 import { useBarcodeImage } from '../hooks/useBarcodeImage'
 
-export const CANVAS_PADDING = 28
+const CANVAS_PADDING = 28
 
 const SNAP_MM = 0.5
+
+const UNSELECTED_DASH = [4, 3]
 
 const PREVIEW_FONT = "Consolas, 'Courier New', monospace"
 
@@ -53,6 +53,11 @@ function ink(inverted: boolean) {
   return inverted
     ? { color: LABEL_COLORS.invertedInk, globalCompositeOperation: 'difference' as const }
     : { color: LABEL_COLORS.ink, globalCompositeOperation: 'source-over' as const }
+}
+
+function setCursor(event: Konva.KonvaEventObject<MouseEvent>, cursor: string) {
+  const container = event.target.getStage()?.container()
+  if (container) container.style.cursor = cursor
 }
 
 function rotatedPlacement(rotation: Rotation, width: number, height: number) {
@@ -200,14 +205,8 @@ function ElementNode({ element, layout, zoom, selected, invalid, inverted, onSel
       onMouseDown={() => onSelect(element.id)}
       onTap={() => onSelect(element.id)}
       onDragEnd={(event: Konva.KonvaEventObject<DragEvent>) => onMove(element.id, snapX(event.target.x()), snapY(event.target.y()))}
-      onMouseEnter={(event: Konva.KonvaEventObject<MouseEvent>) => {
-        const container = event.target.getStage()?.container()
-        if (container) container.style.cursor = 'move'
-      }}
-      onMouseLeave={(event: Konva.KonvaEventObject<MouseEvent>) => {
-        const container = event.target.getStage()?.container()
-        if (container) container.style.cursor = 'default'
-      }}
+      onMouseEnter={(event: Konva.KonvaEventObject<MouseEvent>) => setCursor(event, 'move')}
+      onMouseLeave={(event: Konva.KonvaEventObject<MouseEvent>) => setCursor(event, 'default')}
     >
       <ElementShape element={element} layout={layout} zoom={zoom} inverted={inverted} />
       <Rect
@@ -218,35 +217,43 @@ function ElementNode({ element, layout, zoom, selected, invalid, inverted, onSel
         fill="rgba(0,0,0,0)"
         stroke={outline}
         strokeWidth={1}
-        dash={selected ? undefined : [4, 3]}
+        dash={selected ? undefined : UNSELECTED_DASH}
       />
     </Group>
   )
 }
 
-function Grid({ layout, zoom }: { layout: LabelLayout; zoom: number }) {
-  const lines = []
+const Grid = memo(function Grid({ widthMm, heightMm, zoom }: { widthMm: number; heightMm: number; zoom: number }) {
   const stepMm = zoom >= 5 ? 1 : 5
-  for (let mm = stepMm; mm < layout.widthMm; mm += stepMm) {
-    const major = Math.round(mm) % 10 === 0
-    lines.push(
-      <Line key={`v${mm}`} points={[mm * zoom, 0, mm * zoom, layout.heightMm * zoom]} stroke={major ? LABEL_COLORS.gridMajor : LABEL_COLORS.grid} strokeWidth={1} globalCompositeOperation="multiply" />
-    )
-  }
-  for (let mm = stepMm; mm < layout.heightMm; mm += stepMm) {
-    const major = Math.round(mm) % 10 === 0
-    lines.push(
-      <Line key={`h${mm}`} points={[0, mm * zoom, layout.widthMm * zoom, mm * zoom]} stroke={major ? LABEL_COLORS.gridMajor : LABEL_COLORS.grid} strokeWidth={1} globalCompositeOperation="multiply" />
-    )
-  }
+  const width = widthMm * zoom
+  const height = heightMm * zoom
+  const axes = [
+    { key: 'v', lengthMm: widthMm, points: (px: number) => [px, 0, px, height] },
+    { key: 'h', lengthMm: heightMm, points: (px: number) => [0, px, width, px] }
+  ]
+
   return (
     <Group x={CANVAS_PADDING} y={CANVAS_PADDING} listening={false}>
-      {lines}
+      {axes.flatMap(({ key, lengthMm, points }) =>
+        Array.from({ length: Math.ceil(lengthMm / stepMm) - 1 }, (_, index) => {
+          const mm = (index + 1) * stepMm
+          const major = Math.round(mm) % 10 === 0
+          return (
+            <Line
+              key={`${key}${mm}`}
+              points={points(mm * zoom)}
+              stroke={major ? LABEL_COLORS.gridMajor : LABEL_COLORS.grid}
+              strokeWidth={1}
+              globalCompositeOperation="multiply"
+            />
+          )
+        })
+      )}
     </Group>
   )
-}
+})
 
-export function LabelCanvas({ layout, selectedId, zoom, invalidIds, onSelect, onMove }: LabelCanvasProps) {
+export const LabelCanvas = memo(function LabelCanvas({ layout, selectedId, zoom, invalidIds, onSelect, onMove }: LabelCanvasProps) {
   const labelWidth = layout.widthMm * zoom
   const labelHeight = layout.heightMm * zoom
   const invertedIds = useMemo(() => invertedElementIds(layout), [layout])
@@ -287,8 +294,8 @@ export function LabelCanvas({ layout, selectedId, zoom, invalidIds, onSelect, on
             onMove={onMove}
           />
         ))}
-        <Grid layout={layout} zoom={zoom} />
+        <Grid widthMm={layout.widthMm} heightMm={layout.heightMm} zoom={zoom} />
       </Layer>
     </Stage>
   )
-}
+})

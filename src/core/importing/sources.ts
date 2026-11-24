@@ -13,7 +13,7 @@ const ATTRIBUTE_PATTERN = /([\w:-]+)\s*=\s*"([^"]*)"/g
 
 const XML_ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
 
-export function decodeBytes(bytes: Uint8Array): string {
+function decodeBytes(bytes: Uint8Array): string {
   try {
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^﻿/, '')
   } catch {
@@ -52,11 +52,11 @@ function baseName(fileName: string): string {
   return name.replace(/\.[^.]+$/, '')
 }
 
-export function isSyspdvExport(text: string): boolean {
+function isSyspdvExport(text: string): boolean {
   return /<DATAPACKET\b/i.test(text)
 }
 
-export function parseSyspdvExport(xml: string): ImportCandidate[] {
+function parseSyspdvExport(xml: string): ImportCandidate[] {
   const candidates: ImportCandidate[] = []
   for (const row of xml.matchAll(ROW_PATTERN)) {
     const attributes = attributesOf(row[1])

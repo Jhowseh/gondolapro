@@ -14,7 +14,7 @@ O GôndolaPro é um app Electron com interface em React. A regra de negócio fic
 src/
   core/                 regra de negócio, sem React nem Electron
     types.ts            modelo de dados (LabelLayout, elementos)
-    units.ts            conversões mm ↔ pontos ↔ centésimos de polegada
+    units.ts            conversões entre mm e pontos
     fonts.ts            tabela de fontes das impressoras e escolha da fonte
     measure.ts          tamanho de cada elemento (usado pela prévia e pelos geradores)
     syspdvFields.ts     catálogo de tags do SysPDV e valores de exemplo
@@ -27,7 +27,7 @@ src/
     printerPayload.ts   prepara o texto para envio direto à impressora
     validation.ts       verificações exibidas no painel Verificação
     serialization.ts    leitura e gravação do arquivo .etq
-    layout.ts           criação de elementos e layout padrão
+    layout.ts           criação de elementos, layout padrão e alterações puras do layout (exemplos, cabeçalho)
     languages.ts        lista de linguagens e resoluções
   main/                 processo principal do Electron
     index.ts            janela, diálogos de abrir/salvar, IPC
@@ -36,12 +36,14 @@ src/
   preload/index.ts      ponte segura (contextBridge) exposta como window.api
   renderer/             interface React
     src/App.tsx         estado da tela, atalhos, abrir/salvar/imprimir
-    src/components/     barra superior, paleta, prévia (Konva), propriedades, barra de código
-    src/hooks/          histórico de desfazer/refazer, tema e imagem do código de barras
+    src/components/     barra superior, paleta, prévia (Konva), propriedades, barra de código, Modal base dos diálogos
+    src/hooks/          desfazer/refazer, tema, tecla Esc e imagem do código de barras
     src/theme.ts        leitura, gravação e aplicação do tema claro/escuro
+    src/storage.ts      preferências salvas no computador (tema, impressora, painel de código)
+    src/text.ts         plural e mensagem de erro para a interface
 resources/
   raw-print.ps1         script que grava bytes direto no spooler do Windows
-  icon.ico / icon.png   ícone do app (etiqueta azul com G), usado na janela, na barra de tarefas e no instalador
+  icon.ico              ícone do app (etiqueta azul com G), usado na janela, na barra de tarefas e no instalador
 tests/                  testes do núcleo
 docs/                   esta documentação e os PDFs de referência
 ```

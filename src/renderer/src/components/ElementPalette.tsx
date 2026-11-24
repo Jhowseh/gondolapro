@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { languageInfo } from '../../../core/languages'
-import { FIELD_GROUPS, insertTextOf, isPrintableField, SYSPDV_FIELDS, tag, type SysPdvField } from '../../../core/syspdvFields'
+import { isForeignRaw } from '../../../core/layout'
+import { insertTextOf, PRINTABLE_FIELD_GROUPS, tag, type SysPdvField } from '../../../core/syspdvFields'
 import type { DrawableType, LabelElement, Language, RawElement } from '../../../core/types'
 import { Icon } from './Icon'
 
@@ -13,21 +14,12 @@ interface ElementPaletteProps {
   onAddField: (tagText: string) => void
 }
 
-const ELEMENT_BUTTONS: { type: DrawableType; label: string; icon: string }[] = [
-  { type: 'text', label: 'Texto', icon: 'T' },
-  { type: 'barcode', label: 'Barras', icon: '║' },
-  { type: 'line', label: 'Linha', icon: '—' },
-  { type: 'box', label: 'Caixa', icon: '□' }
+const ELEMENT_BUTTONS: { type: DrawableType; label: string; title: string; icon: string }[] = [
+  { type: 'text', label: 'Texto', title: 'Adicionar texto', icon: 'T' },
+  { type: 'barcode', label: 'Barras', title: 'Adicionar código de barras', icon: '║' },
+  { type: 'line', label: 'Linha', title: 'Adicionar linha', icon: '—' },
+  { type: 'box', label: 'Caixa', title: 'Adicionar caixa', icon: '□' }
 ]
-
-const ELEMENT_TITLES: Record<DrawableType, string> = {
-  text: 'Adicionar texto',
-  barcode: 'Adicionar código de barras',
-  line: 'Adicionar linha',
-  box: 'Adicionar caixa'
-}
-
-const PRINTABLE_FIELDS = SYSPDV_FIELDS.filter(isPrintableField)
 
 function normalizeSearch(text: string): string {
   return text
@@ -37,13 +29,18 @@ function normalizeSearch(text: string): string {
     .trim()
 }
 
+const SEARCHABLE_GROUPS = PRINTABLE_FIELD_GROUPS.map((group) => ({
+  ...group,
+  fields: group.fields.map((field) => ({ field, key: normalizeSearch(`${tag(field.code)} ${field.code} ${field.label}`) }))
+}))
+
 function fieldTitle(field: SysPdvField): string {
   return [field.parameterHint, `Exemplo: ${field.sample}`, field.maxLength ? `Tamanho máximo: ${field.maxLength}` : ''].filter(Boolean).join('\n')
 }
 
 export function ElementPalette({ elements, language, selectedId, onSelect, onAdd, onAddField }: ElementPaletteProps) {
   const [query, setQuery] = useState('')
-  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set([FIELD_GROUPS[0].id]))
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set([PRINTABLE_FIELD_GROUPS[0].id]))
   const rawElements = elements.filter((element): element is RawElement => element.type === 'raw')
   const search = normalizeSearch(query)
   const searching = search.length > 0
@@ -56,12 +53,14 @@ export function ElementPalette({ elements, language, selectedId, onSelect, onAdd
       return next
     })
 
-  const groups = FIELD_GROUPS.map((group) => ({
-    ...group,
-    fields: PRINTABLE_FIELDS.filter(
-      (field) => field.group === group.id && (!searching || normalizeSearch(`${tag(field.code)} ${field.code} ${field.label}`).includes(search))
-    )
-  })).filter((group) => group.fields.length > 0)
+  const groups = useMemo(
+    () =>
+      SEARCHABLE_GROUPS.map((group) => ({
+        ...group,
+        fields: group.fields.filter(({ key }) => key.includes(search)).map(({ field }) => field)
+      })).filter((group) => group.fields.length > 0),
+    [search]
+  )
 
   return (
     <aside className="panel palette">
@@ -69,7 +68,7 @@ export function ElementPalette({ elements, language, selectedId, onSelect, onAdd
         <h2>Inserir</h2>
         <div className="palette-grid">
           {ELEMENT_BUTTONS.map((button) => (
-            <button key={button.type} type="button" className="palette-button" onClick={() => onAdd(button.type)} title={ELEMENT_TITLES[button.type]}>
+            <button key={button.type} type="button" className="palette-button" onClick={() => onAdd(button.type)} title={button.title}>
               <span className="palette-icon">{button.icon}</span>
               {button.label}
             </button>
@@ -81,18 +80,21 @@ export function ElementPalette({ elements, language, selectedId, onSelect, onAdd
         <section className="panel-section">
           <h2>Comandos sem prévia</h2>
           <ul className="raw-list">
-            {rawElements.map((element) => (
-              <li key={element.id}>
-                <button
-                  type="button"
-                  className={`${element.id === selectedId ? 'active' : ''} ${element.language !== language ? 'ignored' : ''}`}
-                  onClick={() => onSelect(element.id)}
-                  title={element.language !== language ? `Ignorado: comando de ${languageInfo(element.language).label}` : element.content}
-                >
-                  <code>{element.content}</code>
-                </button>
-              </li>
-            ))}
+            {rawElements.map((element) => {
+              const ignored = isForeignRaw(element, language)
+              return (
+                <li key={element.id}>
+                  <button
+                    type="button"
+                    className={`${element.id === selectedId ? 'active' : ''} ${ignored ? 'ignored' : ''}`}
+                    onClick={() => onSelect(element.id)}
+                    title={ignored ? `Ignorado: comando de ${languageInfo(element.language).label}` : element.content}
+                  >
+                    <code>{element.content}</code>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </section>
       )}

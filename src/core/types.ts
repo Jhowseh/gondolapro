@@ -2,6 +2,8 @@ export type Language = 'ppla' | 'epl' | 'zpl'
 
 export type Rotation = 0 | 90 | 180 | 270
 
+export const ROTATIONS: Rotation[] = [0, 90, 180, 270]
+
 export type Symbology = 'ean13' | 'i2of5'
 
 export interface FontOverride {
@@ -69,9 +71,11 @@ export interface RawElement {
 
 export type LabelElement = TextElement | BarcodeElement | LineElement | BoxElement | RawElement
 
-export type ElementType = LabelElement['type']
+type ElementType = LabelElement['type']
 
 export type DrawableType = Exclude<ElementType, 'raw'>
+
+export type DrawableElement = Exclude<LabelElement, RawElement>
 
 export interface Template {
   header: string

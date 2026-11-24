@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { restoreControlCodes, showControlCodes } from '../../../core/controlCodes'
 import { detectLanguage, importScript, inferFrame, summarizeImport, type ImportCandidate, type ImportResult } from '../../../core/importing'
 import { DPI_OPTIONS, LANGUAGES, languageInfo } from '../../../core/languages'
 import type { Language } from '../../../core/types'
+import { errorMessage, plural } from '../text'
+import { Modal } from './Modal'
 import { NumberField } from './NumberField'
 
 export interface ImportSource {
@@ -19,9 +21,7 @@ interface ImportDialogProps {
 
 const DEFAULT_SIZE = { widthMm: 100, heightMm: 30, gapMm: 3 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
+const FALLBACK_NAME = 'Layout importado'
 
 function roundMm(value: number): number {
   return Math.round(value * 10) / 10
@@ -45,17 +45,15 @@ export function ImportDialog({ source, defaultDpi, onCancel, onImport }: ImportD
   const [syspdvCode, setSyspdvCode] = useState(first.syspdvCode)
   const [language, setLanguage] = useState<Language>(() => detectLanguage(first.script))
   const [languageTouched, setLanguageTouched] = useState(false)
-  const [size, setSize] = useState(() => sizeOf(first.script, detectLanguage(first.script), defaultDpi))
+  const [size, setSize] = useState(() => sizeOf(first.script, language, defaultDpi))
   const [sizeTouched, setSizeTouched] = useState(false)
   const [dpi, setDpi] = useState(defaultDpi)
+  const detected = useMemo(() => (script.trim() ? detectLanguage(script) : null), [script])
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCancel()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onCancel])
+  const updateSize = (patch: Partial<typeof size>) => {
+    setSize((current) => ({ ...current, ...patch }))
+    setSizeTouched(true)
+  }
 
   const applyScript = (text: string, options: { resetTouched: boolean }) => {
     setScript(text)
@@ -82,154 +80,138 @@ export function ImportDialog({ source, defaultDpi, onCancel, onImport }: ImportD
   const outcome = useMemo((): { result: ImportResult | null; error: string | null } => {
     if (!script.trim()) return { result: null, error: null }
     try {
-      return { result: importScript(script, language, { name: name.trim() || 'Layout importado', ...size, dpi, syspdvCode }), error: null }
+      return { result: importScript(script, language, { name: FALLBACK_NAME, ...size, dpi, syspdvCode }), error: null }
     } catch (caught) {
       return { result: null, error: errorMessage(caught) }
     }
-  }, [script, language, name, size, dpi, syspdvCode])
+  }, [script, language, size, dpi, syspdvCode])
 
   const summary = outcome.result ? summarizeImport(outcome.result) : null
 
+  const confirm = () => {
+    if (outcome.result) onImport({ ...outcome.result, layout: { ...outcome.result.layout, name: name.trim() || FALLBACK_NAME } })
+  }
+
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onCancel()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
-        <header className="modal-header">
-          <h2 id="import-title">Importar layout</h2>
-          <button type="button" className="icon-button" onClick={onCancel} title="Fechar (Esc)">
-            ×
-          </button>
-        </header>
-
-        <div className="modal-body import-body">
-          <section className="import-source">
-            <div className="import-file">
-              <span className="field-label">Origem</span>
-              <span className="file-name">{source.label}</span>
-            </div>
-            <p className="hint">Confira a linguagem e o tamanho da etiqueta. O código abaixo pode ser editado antes de importar.</p>
-            {candidates.length > 1 && (
-              <label className="field">
-                <span className="field-label">Layout dentro do arquivo</span>
-                <select value={candidateIndex} onChange={(event) => selectCandidate(Number(event.target.value))}>
-                  {candidates.map((candidate, index) => (
-                    <option key={`${candidate.label}-${index}`} value={index}>
-                      {candidate.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <textarea
-              className="code import-code"
-              spellCheck={false}
-              placeholder="Cole aqui o código da etiqueta…"
-              value={showControlCodes(script)}
-              onChange={(event) => applyScript(restoreControlCodes(event.target.value), { resetTouched: false })}
-            />
-          </section>
-
-          <section className="import-settings">
-            <label className="field">
-              <span className="field-label">Nome</span>
-              <input value={name} onChange={(event) => setName(event.target.value)} />
-            </label>
-            <label className="field">
-              <span className="field-label">Linguagem</span>
-              <select
-                value={language}
-                onChange={(event) => {
-                  setLanguage(event.target.value as Language)
-                  setLanguageTouched(true)
-                }}
-              >
-                {LANGUAGES.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                    {script.trim() && item.id === detectLanguage(script) ? ' (detectada)' : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="field-row">
-              <NumberField
-                label="Largura"
-                suffix="mm"
-                value={size.widthMm}
-                min={10}
-                max={240}
-                onChange={(widthMm) => {
-                  setSize((current) => ({ ...current, widthMm }))
-                  setSizeTouched(true)
-                }}
-              />
-              <NumberField
-                label="Altura"
-                suffix="mm"
-                value={size.heightMm}
-                min={5}
-                max={300}
-                onChange={(heightMm) => {
-                  setSize((current) => ({ ...current, heightMm }))
-                  setSizeTouched(true)
-                }}
-              />
-            </div>
-            <div className="field-row">
-              <NumberField
-                label="Espaço"
-                suffix="mm"
-                value={size.gapMm}
-                min={0}
-                max={20}
-                onChange={(gapMm) => {
-                  setSize((current) => ({ ...current, gapMm }))
-                  setSizeTouched(true)
-                }}
-              />
-              <label className="field">
-                <span className="field-label">Resolução</span>
-                <select value={dpi} onChange={(event) => setDpi(Number(event.target.value))}>
-                  {DPI_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option} dpi
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            {language === 'ppla' && <p className="hint">O código PPLA não informa o tamanho da etiqueta. Confira a largura e a altura antes de importar.</p>}
-
-            {summary && (
-              <div className="import-summary">
-                <strong>{languageInfo(language).label}</strong>
-                <span>
-                  {summary.drawable} {summary.drawable === 1 ? 'elemento' : 'elementos'} com prévia
-                </span>
-                {summary.raw > 0 && (
-                  <span>
-                    {summary.raw} {summary.raw === 1 ? 'comando mantido' : 'comandos mantidos'} sem prévia
-                  </span>
-                )}
-              </div>
-            )}
-            {outcome.result?.warnings.map((warning) => (
-              <p key={warning} className="warning">
-                {warning}
-              </p>
-            ))}
-            {outcome.error && <p className="error">{outcome.error}</p>}
-          </section>
-        </div>
-
-        <footer className="modal-footer">
+    <Modal
+      title="Importar layout"
+      titleId="import-title"
+      bodyClassName="import-body"
+      onClose={onCancel}
+      footer={
+        <>
           <button type="button" onClick={onCancel}>
             Cancelar
           </button>
-          <button type="button" className="primary" disabled={!outcome.result} onClick={() => outcome.result && onImport(outcome.result)}>
+          <button type="button" className="primary" disabled={!outcome.result} onClick={confirm}>
             Importar
           </button>
-        </footer>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <section className="import-source">
+        <div className="import-file">
+          <span className="field-label">Origem</span>
+          <span className="file-name">{source.label}</span>
+        </div>
+        <p className="hint">Confira a linguagem e o tamanho da etiqueta. O código abaixo pode ser editado antes de importar.</p>
+        {candidates.length > 1 && (
+          <label className="field">
+            <span className="field-label">Layout dentro do arquivo</span>
+            <select value={candidateIndex} onChange={(event) => selectCandidate(Number(event.target.value))}>
+              {candidates.map((candidate, index) => (
+                <option key={`${candidate.label}-${index}`} value={index}>
+                  {candidate.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <textarea
+          className="code import-code"
+          spellCheck={false}
+          placeholder="Cole aqui o código da etiqueta…"
+          value={showControlCodes(script)}
+          onChange={(event) => applyScript(restoreControlCodes(event.target.value), { resetTouched: false })}
+        />
+      </section>
+
+      <section className="import-settings">
+        <label className="field">
+          <span className="field-label">Nome</span>
+          <input value={name} onChange={(event) => setName(event.target.value)} />
+        </label>
+        <label className="field">
+          <span className="field-label">Linguagem</span>
+          <select
+            value={language}
+            onChange={(event) => {
+              setLanguage(event.target.value as Language)
+              setLanguageTouched(true)
+            }}
+          >
+            {LANGUAGES.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+                {item.id === detected ? ' (detectada)' : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="field-row">
+          <NumberField
+            label="Largura"
+            suffix="mm"
+            value={size.widthMm}
+            min={10}
+            max={240}
+            onChange={(widthMm) => updateSize({ widthMm })}
+          />
+          <NumberField
+            label="Altura"
+            suffix="mm"
+            value={size.heightMm}
+            min={5}
+            max={300}
+            onChange={(heightMm) => updateSize({ heightMm })}
+          />
+        </div>
+        <div className="field-row">
+          <NumberField
+            label="Espaço"
+            suffix="mm"
+            value={size.gapMm}
+            min={0}
+            max={20}
+            onChange={(gapMm) => updateSize({ gapMm })}
+          />
+          <label className="field">
+            <span className="field-label">Resolução</span>
+            <select value={dpi} onChange={(event) => setDpi(Number(event.target.value))}>
+              {DPI_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option} dpi
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {language === 'ppla' && <p className="hint">O código PPLA não informa o tamanho da etiqueta. Confira a largura e a altura antes de importar.</p>}
+
+        {summary && (
+          <div className="import-summary">
+            <strong>{languageInfo(language).label}</strong>
+            <span>{plural(summary.drawable, 'elemento', 'elementos')} com prévia</span>
+            {summary.raw > 0 && <span>{plural(summary.raw, 'comando mantido', 'comandos mantidos')} sem prévia</span>}
+          </div>
+        )}
+        {outcome.result?.warnings.map((warning) => (
+          <p key={warning} className="warning">
+            {warning}
+          </p>
+        ))}
+        {outcome.error && <p className="error">{outcome.error}</p>}
+      </section>
+    </Modal>
   )
 }

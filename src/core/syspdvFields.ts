@@ -1,4 +1,4 @@
-export type FieldGroup = 'product' | 'price' | 'reference' | 'promotion' | 'stock' | 'company' | 'structure'
+type FieldGroup = 'product' | 'price' | 'reference' | 'promotion' | 'stock' | 'company' | 'structure'
 
 export interface SysPdvField {
   code: string
@@ -14,7 +14,7 @@ export interface SysPdvField {
 
 export type SampleValues = Record<string, string>
 
-export interface TagUsage {
+interface TagUsage {
   code: string
   parameter: string
 }
@@ -32,7 +32,7 @@ export const FIELD_GROUPS: { id: FieldGroup; label: string }[] = [
 
 const DESCRIPTION_SAMPLE = 'ARROZ TIPO 1 PREMIUM PACOTE 5KG'
 
-export const PRICE_PADDING = '  '
+const PRICE_PADDING = '  '
 
 const DESCRIPTION_CODE = '2'
 
@@ -121,6 +121,11 @@ export function isPrintableField(field: SysPdvField): boolean {
   return field.group !== 'structure'
 }
 
+export const PRINTABLE_FIELD_GROUPS = FIELD_GROUPS.map((group) => ({
+  ...group,
+  fields: SYSPDV_FIELDS.filter((field) => isPrintableField(field) && field.group === group.id)
+}))
+
 export function findTagUsages(text: string): TagUsage[] {
   return [...text.matchAll(TAG_PATTERN)].map((match) => {
     const field = fieldByCode(match[1])
@@ -133,7 +138,7 @@ export function findTags(text: string): string[] {
   return findTagUsages(text).map((usage) => usage.code)
 }
 
-export function isEditableSample(field: SysPdvField): boolean {
+function isEditableSample(field: SysPdvField): boolean {
   return isPrintableField(field) && !field.parameterDigits && !(field.code in DESCRIPTION_SLICES)
 }
 

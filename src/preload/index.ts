@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-export interface OpenedFile {
+export type Theme = 'light' | 'dark'
+
+interface OpenedFile {
   path: string
   fileName: string
   bytes: Uint8Array
@@ -23,9 +25,9 @@ const api = {
   exportSyspdv: (request: ExportRequest): Promise<string | null> => ipcRenderer.invoke('layout:export-syspdv', request),
   listPrinters: (): Promise<string[]> => ipcRenderer.invoke('printers:list'),
   printRaw: (printer: string, payload: string): Promise<void> => ipcRenderer.invoke('printers:print-raw', printer, payload),
-  setTheme: (theme: 'light' | 'dark'): void => ipcRenderer.send('theme:set', theme)
+  setTheme: (theme: Theme): void => ipcRenderer.send('theme:set', theme)
 }
 
-export type EtiqApi = typeof api
+export type GondolaApi = typeof api
 
 contextBridge.exposeInMainWorld('api', api)

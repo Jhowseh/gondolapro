@@ -2,7 +2,7 @@ export const SYSPDV_CODE_LENGTH = 2
 
 export const SYSPDV_DESCRIPTION_LENGTH = 40
 
-export interface SyspdvExport {
+interface SyspdvExport {
   code: string
   description: string
   script: string

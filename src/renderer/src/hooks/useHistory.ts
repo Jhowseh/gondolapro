@@ -8,7 +8,7 @@ interface HistoryState<T> {
   future: T[]
 }
 
-export type Updater<T> = T | ((previous: T) => T)
+type Updater<T> = T | ((previous: T) => T)
 
 export function useHistory<T>(initial: () => T) {
   const [state, setState] = useState<HistoryState<T>>(() => ({ past: [], present: initial(), future: [] }))

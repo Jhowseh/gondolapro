@@ -1,9 +1,19 @@
-import { FIELD_GROUPS, fieldByCode, insertTextOf, isPrintableField, SYSPDV_FIELDS, tag } from '../../../core/syspdvFields'
+import { fieldByCode, insertTextOf, PRINTABLE_FIELD_GROUPS, tag } from '../../../core/syspdvFields'
 
 interface TagPickerProps {
   placeholder: string
   onPick: (tagText: string) => void
 }
+
+const GROUP_OPTIONS = PRINTABLE_FIELD_GROUPS.map((group) => (
+  <optgroup key={group.id} label={group.label}>
+    {group.fields.map((field) => (
+      <option key={field.code} value={field.code}>
+        {`${tag(field.code)}  ${field.label}`}
+      </option>
+    ))}
+  </optgroup>
+))
 
 export function TagPicker({ placeholder, onPick }: TagPickerProps) {
   return (
@@ -18,15 +28,7 @@ export function TagPicker({ placeholder, onPick }: TagPickerProps) {
       }}
     >
       <option value="">{placeholder}</option>
-      {FIELD_GROUPS.map((group) => (
-        <optgroup key={group.id} label={group.label}>
-          {SYSPDV_FIELDS.filter((field) => isPrintableField(field) && field.group === group.id).map((field) => (
-            <option key={field.code} value={field.code}>
-              {`${tag(field.code)}  ${field.label}`}
-            </option>
-          ))}
-        </optgroup>
-      ))}
+      {GROUP_OPTIONS}
     </select>
   )
 }

@@ -1,5 +1,8 @@
-import type { Corner } from '../generators/anchor'
-import type { LabelLayout, Language, Rotation } from '../types'
+import { cornerOf, type Corner } from '../generators/anchor'
+import { createText } from '../layout'
+import { elementBox, measureText } from '../measure'
+import { ROTATIONS, type FontOverride, type LabelElement, type LabelLayout, type Language, type Rotation, type TextElement } from '../types'
+import { dotsToMm } from '../units'
 
 export interface ImportFrame {
   name: string
@@ -15,7 +18,7 @@ export interface ImportResult {
   warnings: string[]
 }
 
-export interface ScriptSections {
+interface ScriptSections {
   header: string[]
   body: string[]
   footer: string[]
@@ -56,22 +59,20 @@ export function baseLayout(frame: ImportFrame, language: Language, header: strin
   }
 }
 
-export function topLeftFromCorner(point: { x: number; y: number }, corner: Corner, width: number, height: number): { x: number; y: number } {
-  switch (corner) {
-    case 'top-left':
-      return { x: point.x, y: point.y }
-    case 'top-right':
-      return { x: point.x - width, y: point.y }
-    case 'bottom-left':
-      return { x: point.x, y: point.y - height }
-    case 'bottom-right':
-      return { x: point.x - width, y: point.y - height }
-  }
+export function placeAtCorner<T extends LabelElement>(element: T, layout: LabelLayout, pointMm: { x: number; y: number }, corner: Corner): T {
+  const { width, height } = elementBox(element, layout)
+  const offset = cornerOf({ x: 0, y: 0, width, height }, corner)
+  return { ...element, x: pointMm.x - offset.x, y: pointMm.y - offset.y }
+}
+
+export function importedText(rotation: Rotation, content: string, font: FontOverride, layout: LabelLayout): TextElement {
+  const draft = createText({ rotation, content, heightMm: 1, font })
+  return { ...draft, heightMm: dotsToMm(measureText(draft, layout).height, layout.dpi) }
 }
 
 export function invertRotationCodes(codes: Record<Rotation, string>): Record<string, Rotation> {
   const inverted: Record<string, Rotation> = {}
-  for (const rotation of [0, 90, 180, 270] as Rotation[]) {
+  for (const rotation of ROTATIONS) {
     inverted[codes[rotation]] = rotation
   }
   return inverted

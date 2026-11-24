@@ -1,13 +1,13 @@
 import { resolveFont, type ResolvedFont } from './fonts'
 import { substituteSamples, type SampleValues } from './syspdvFields'
 import type { BarcodeElement, Box, LabelElement, LabelLayout, Size, TextElement } from './types'
-import { dotsToMm, mmToDots } from './units'
+import { dotsToMm, mmToDots, mmToVisibleDots } from './units'
 
-export const I2OF5_WIDE_RATIO = 2
+const I2OF5_WIDE_RATIO = 2
 
-export const BARCODE_TEXT_HEIGHT_MM = 2.5
+const BARCODE_TEXT_HEIGHT_MM = 2.5
 
-export const PPLA_DESCENT_RATIO = 0.25
+const PPLA_DESCENT_RATIO = 0.25
 
 const DESCENDER_PATTERN = /[,;gjpqy]/
 
@@ -15,7 +15,7 @@ const EAN13_MODULES = 95
 
 const EAN13_FALLBACK = '7891234567895'
 
-export interface TextMetrics {
+interface TextMetrics {
   font: ResolvedFont
   text: string
   width: number
@@ -23,7 +23,7 @@ export interface TextMetrics {
   descent: number
 }
 
-export interface BarcodeMetrics {
+interface BarcodeMetrics {
   data: string
   width: number
   height: number
@@ -62,7 +62,7 @@ export function wideBarDots(element: BarcodeElement): number {
   return element.wideDots ?? element.moduleDots * I2OF5_WIDE_RATIO
 }
 
-export function barcodeWidthDots(element: BarcodeElement, data: string): number {
+function barcodeWidthDots(element: BarcodeElement, data: string): number {
   if (element.symbology === 'ean13') {
     return EAN13_MODULES * element.moduleDots
   }
@@ -73,7 +73,7 @@ export function barcodeWidthDots(element: BarcodeElement, data: string): number 
 
 export function measureBarcode(element: BarcodeElement, layout: LabelLayout): BarcodeMetrics {
   const data = barcodeData(element, layout.samples)
-  const barHeight = Math.max(1, mmToDots(element.heightMm, layout.dpi))
+  const barHeight = mmToVisibleDots(element.heightMm, layout.dpi)
   const textHeight = element.showText ? mmToDots(BARCODE_TEXT_HEIGHT_MM, layout.dpi) : 0
   return {
     data,

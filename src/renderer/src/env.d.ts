@@ -1,8 +1,8 @@
-import type { EtiqApi } from '../../preload'
+import type { GondolaApi } from '../../preload'
 
 declare global {
   interface Window {
-    api: EtiqApi
+    api: GondolaApi
   }
 }
 

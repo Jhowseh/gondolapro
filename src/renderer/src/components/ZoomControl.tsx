@@ -1,6 +1,6 @@
-export const MIN_ZOOM = 2
+const MIN_ZOOM = 2
 
-export const MAX_ZOOM = 16
+const MAX_ZOOM = 16
 
 const BASE_ZOOM = 4
 

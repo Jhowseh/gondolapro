@@ -4,10 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { resourcePath } from './resources'
 
-function scriptPath(): string {
-  return resourcePath('raw-print.ps1')
-}
-
 function run(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
     execFile(command, args, { windowsHide: true }, (error, _stdout, stderr) => {
@@ -31,7 +27,7 @@ export async function printRaw(printer: string, payload: string): Promise<void> 
       '-ExecutionPolicy',
       'Bypass',
       '-File',
-      scriptPath(),
+      resourcePath('raw-print.ps1'),
       '-PrinterName',
       printer,
       '-FilePath',

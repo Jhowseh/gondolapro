@@ -12,8 +12,8 @@ export function dotsToMm(dots: number, dpi: number): number {
   return dots / dotsPerMm(dpi)
 }
 
-export function mmToHundredthsInch(mm: number): number {
-  return Math.round((mm / MM_PER_INCH) * 100)
+export function mmToVisibleDots(mm: number, dpi: number): number {
+  return Math.max(1, mmToDots(mm, dpi))
 }
 
 export function pad(value: number, length: number): string {

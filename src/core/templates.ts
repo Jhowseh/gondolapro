@@ -23,7 +23,7 @@ export function templateFor(layout: LabelLayout): Template {
   return layout.templates[layout.language] ?? DEFAULT_TEMPLATES[layout.language]
 }
 
-export function templateVariables(layout: LabelLayout): Record<string, number> {
+function templateVariables(layout: LabelLayout): Record<string, number> {
   return {
     widthDots: mmToDots(layout.widthMm, layout.dpi),
     heightDots: mmToDots(layout.heightMm, layout.dpi),

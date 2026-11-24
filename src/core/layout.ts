@@ -1,9 +1,11 @@
-import { tag } from './syspdvFields'
-import type { BarcodeElement, BoxElement, DrawableType, LabelElement, LabelLayout, Language, LineElement, RawElement, TextElement } from './types'
+import { cleanSamples, tag, type SampleValues } from './syspdvFields'
+import type { BarcodeElement, BoxElement, DrawableElement, DrawableType, LabelElement, LabelLayout, Language, LineElement, RawElement, Template, TextElement } from './types'
 
 type Overrides<T> = Partial<Omit<T, 'id' | 'type'>>
 
-export function createId(): string {
+const DUPLICATE_OFFSET_MM = 2
+
+function createId(): string {
   return crypto.randomUUID()
 }
 
@@ -39,32 +41,62 @@ export function isInverted(element: LabelElement): element is LineElement | BoxE
   return (element.type === 'line' || element.type === 'box') && element.invert === true
 }
 
+export function partitionByInversion(elements: LabelElement[]): { normal: LabelElement[]; inverted: LabelElement[] } {
+  return { normal: elements.filter((element) => !isInverted(element)), inverted: elements.filter(isInverted) }
+}
+
 export function emissionOrder(elements: LabelElement[]): LabelElement[] {
-  return [...elements.filter((element) => !isInverted(element)), ...elements.filter(isInverted)]
+  const { normal, inverted } = partitionByInversion(elements)
+  return [...normal, ...inverted]
+}
+
+export function isForeignRaw(element: LabelElement, language: Language): boolean {
+  return element.type === 'raw' && element.language !== language
+}
+
+export function contentOf(element: LabelElement): string | null {
+  return element.type === 'text' || element.type === 'barcode' ? element.content : null
 }
 
 export function createRaw(language: Language, content: string): RawElement {
   return { id: createId(), type: 'raw', x: 0, y: 0, language, content }
 }
 
-export function createElement(type: DrawableType, position: { x: number; y: number }): LabelElement {
+export function createElement(type: DrawableType): LabelElement {
   switch (type) {
     case 'text':
-      return createText(position)
+      return createText()
     case 'barcode':
-      return createBarcode(position)
+      return createBarcode()
     case 'line':
-      return createLine(position)
+      return createLine()
     case 'box':
-      return createBox(position)
+      return createBox()
   }
 }
 
-export function duplicateElement(element: LabelElement, offsetMm = 2): LabelElement {
+export function duplicateElement(element: LabelElement): LabelElement {
   if (element.type === 'raw') {
     return { ...element, id: createId() }
   }
-  return { ...element, id: createId(), x: element.x + offsetMm, y: element.y + offsetMm }
+  return { ...element, id: createId(), x: element.x + DUPLICATE_OFFSET_MM, y: element.y + DUPLICATE_OFFSET_MM }
+}
+
+export function withSamples(layout: LabelLayout, samples: SampleValues): LabelLayout {
+  const cleaned = cleanSamples(samples)
+  const next: LabelLayout = { ...layout }
+  delete next.samples
+  return Object.keys(cleaned).length > 0 ? { ...next, samples: cleaned } : next
+}
+
+export function withTemplate(layout: LabelLayout, template: Template | null): LabelLayout {
+  const templates = { ...layout.templates }
+  if (template) {
+    templates[layout.language] = template
+  } else {
+    delete templates[layout.language]
+  }
+  return { ...layout, templates }
 }
 
 export function createDefaultLayout(): LabelLayout {
@@ -100,6 +132,6 @@ export function describeElement(element: LabelElement): string {
   }
 }
 
-export function isDrawable(element: LabelElement): element is Exclude<LabelElement, RawElement> {
+export function isDrawable(element: LabelElement): element is DrawableElement {
   return element.type !== 'raw'
 }
