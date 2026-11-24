@@ -92,6 +92,10 @@ No código e nos editores, `<STX>` representa o caractere de controle STX (códi
 
 Versão 1.0. Os geradores seguem a sintaxe dos manuais e dos exemplos de layout do SysPDV, mas **ainda não foram validados em uma impressora física**. A lista do que precisa ser conferido está em [docs/printer-languages.md](docs/printer-languages.md#o-que-precisa-ser-calibrado).
 
+## Licença
+
+Software proprietário da PBtec, com uso gratuito e sem permissão de redistribuição ou modificação. Os termos completos estão em [LICENSE.txt](LICENSE.txt), que também aparece no instalador.
+
 ## Créditos
 
 Desenvolvido por José Henrique, Erick Henrique e Eduardo Vasconcelos. Os mesmos créditos aparecem em **Sobre o GôndolaPro**, no menu **⋯** da barra de ferramentas.

@@ -25,7 +25,8 @@ const api = {
   exportSyspdv: (request: ExportRequest): Promise<string | null> => ipcRenderer.invoke('layout:export-syspdv', request),
   listPrinters: (): Promise<string[]> => ipcRenderer.invoke('printers:list'),
   printRaw: (printer: string, payload: string): Promise<void> => ipcRenderer.invoke('printers:print-raw', printer, payload),
-  setTheme: (theme: Theme): void => ipcRenderer.send('theme:set', theme)
+  setTheme: (theme: Theme): void => ipcRenderer.send('theme:set', theme),
+  openManual: (): void => ipcRenderer.send('manual:open')
 }
 
 export type GondolaApi = typeof api

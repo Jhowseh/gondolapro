@@ -17,6 +17,7 @@ interface ToolbarProps {
   onExport: () => void
   onUndo: () => void
   onRedo: () => void
+  onManual: () => void
   onShortcuts: () => void
   onAbout: () => void
 }
@@ -78,6 +79,7 @@ export function Toolbar(props: ToolbarProps) {
           className="icon-only"
           items={[
             { label: 'Salvar como…', shortcut: 'Ctrl+Shift+S', onSelect: props.onSaveAs },
+            { label: 'Manual do usuário', onSelect: props.onManual },
             { label: 'Atalhos do teclado', onSelect: props.onShortcuts },
             { label: 'Sobre o GôndolaPro', onSelect: props.onAbout }
           ]}

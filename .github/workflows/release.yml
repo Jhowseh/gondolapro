@@ -37,7 +37,13 @@ jobs:
 
       - run: npx electron-builder --win --publish never
 
+      - name: Copiar o manual para a release
+        shell: pwsh
+        run: Copy-Item docs/user-manual.pdf "release/GondolaPro-Manual-$("${{ github.ref_name }}".TrimStart('v')).pdf"
+
       - uses: softprops/action-gh-release@v2
         with:
-          files: release/GondolaPro-Setup-*.exe
+          files: |
+            release/GondolaPro-Setup-*.exe
+            release/GondolaPro-Manual-*.pdf
           generate_release_notes: true

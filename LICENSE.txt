@@ -1,0 +1,36 @@
+﻿LICENÇA DE USO DO GÔNDOLAPRO
+
+Copyright (c) 2026 PBtec. Todos os direitos reservados.
+
+Ao instalar ou usar o GôndolaPro ("Software"), você concorda com os termos abaixo. Se não concordar, não instale nem use o Software.
+
+1. LICENÇA
+A PBtec concede a você uma licença gratuita, não exclusiva e intransferível para instalar e usar o Software nos computadores da sua empresa, com a finalidade de criar e imprimir layouts de etiqueta para o SysPDV.
+
+2. O QUE NÃO É PERMITIDO
+Sem autorização por escrito da PBtec, não é permitido:
+a) vender, alugar, sublicenciar ou distribuir o Software, no todo ou em parte;
+b) modificar o Software, criar obras derivadas ou incorporar o código em outros produtos;
+c) remover ou alterar avisos de direitos autorais, marcas ou créditos.
+
+O fato de o código-fonte estar disponível publicamente não concede nenhum direito além dos previstos nesta licença.
+
+3. PROPRIEDADE
+O Software, incluindo código, interface, manual e documentação, pertence à PBtec. Esta licença dá apenas o direito de uso descrito acima, e não transfere a propriedade do Software.
+
+4. COMPONENTES DE TERCEIROS
+O Software inclui componentes de código aberto, como Electron, Chromium, React, Konva e JsBarcode, que continuam sujeitos às suas próprias licenças. As licenças do Electron e do Chromium acompanham a instalação.
+
+SysPDV é marca de seu respectivo titular. O GôndolaPro é um produto independente, e não tem vínculo com o titular do SysPDV nem é endossado por ele.
+
+5. SEM GARANTIA
+O Software é fornecido "no estado em que se encontra", sem garantias de qualquer tipo. Confira os layouts e as etiquetas impressas antes de usá-los na loja, principalmente preços, códigos de barras e dados de produtos.
+
+6. LIMITAÇÃO DE RESPONSABILIDADE
+Na máxima extensão permitida pela lei, a PBtec não se responsabiliza por danos diretos ou indiretos decorrentes do uso ou da impossibilidade de uso do Software, incluindo etiquetas com informações incorretas, perda de dados, perda de material de impressão ou lucros cessantes.
+
+7. ENCERRAMENTO
+Esta licença termina automaticamente se você descumprir qualquer um destes termos. Nesse caso, desinstale o Software e apague todas as cópias.
+
+8. LEI APLICÁVEL
+Esta licença é regida pelas leis da República Federativa do Brasil.

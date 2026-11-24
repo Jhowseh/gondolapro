@@ -1,10 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, type IpcMainInvokeEvent, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell, type IpcMainInvokeEvent, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
 import { LAYOUT_FILE_EXTENSION } from '../core/serialization'
 import type { ExportRequest, SaveRequest, Theme } from '../preload'
 import { printRaw, stopRawPrinter } from './rawPrinter'
-import { resourcePath } from './resources'
+import { manualPath, resourcePath } from './resources'
 
 const LAYOUT_FILTER = { name: 'Layout GôndolaPro', extensions: [LAYOUT_FILE_EXTENSION] }
 
@@ -99,6 +99,14 @@ function registerIpc(): void {
   })
 
   ipcMain.handle('printers:print-raw', (_event, printer: string, payload: string) => printRaw(printer, payload))
+
+  ipcMain.on('manual:open', async (event) => {
+    const error = await shell.openPath(manualPath())
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (error && window) {
+      await dialog.showMessageBox(window, { type: 'error', title: 'Manual do usuário', message: 'Não foi possível abrir o manual.', detail: error })
+    }
+  })
 
   ipcMain.on('theme:set', (event, theme: Theme) => {
     if (!Object.hasOwn(WINDOW_BACKGROUND, theme)) return

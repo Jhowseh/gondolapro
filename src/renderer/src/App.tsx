@@ -336,6 +336,7 @@ export function App() {
         onExport={() => setExportOpen(true)}
         onUndo={history.undo}
         onRedo={history.redo}
+        onManual={() => window.api.openManual()}
         onShortcuts={() => setShortcutsOpen(true)}
         onAbout={() => setAboutOpen(true)}
       />

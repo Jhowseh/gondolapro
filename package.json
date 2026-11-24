@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Gerador visual de layouts de etiqueta para o SysPDV",
   "author": "PBtec",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "private": true,
   "main": "./out/main/index.js",
   "scripts": {
@@ -27,6 +28,14 @@
       {
         "from": "resources",
         "to": "resources"
+      },
+      {
+        "from": "docs/user-manual.pdf",
+        "to": "resources/user-manual.pdf"
+      },
+      {
+        "from": "LICENSE.txt",
+        "to": "LICENSE.txt"
       }
     ],
     "win": {
@@ -41,7 +50,12 @@
       "icon": "resources/icon.ico"
     },
     "nsis": {
-      "artifactName": "GondolaPro-Setup-${version}.${ext}"
+      "artifactName": "GondolaPro-Setup-${version}.${ext}",
+      "license": "LICENSE.txt",
+      "installerLanguages": [
+        "pt_BR"
+      ],
+      "language": "1046"
     }
   },
   "dependencies": {
