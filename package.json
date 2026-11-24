@@ -36,21 +36,12 @@
           "arch": [
             "x64"
           ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
         }
       ],
       "icon": "resources/icon.ico"
     },
     "nsis": {
       "artifactName": "GondolaPro-Setup-${version}.${ext}"
-    },
-    "portable": {
-      "artifactName": "GondolaPro-Portable-${version}.${ext}"
     }
   },
   "dependencies": {

@@ -39,7 +39,5 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: |
-            release/GondolaPro-Setup-*.exe
-            release/GondolaPro-Portable-*.exe
+          files: release/GondolaPro-Setup-*.exe
           generate_release_notes: true

@@ -24,7 +24,7 @@ O segundo comando baixa o executável do Electron; o npm 11+ não roda mais esse
 | `npm test` | Roda os testes do núcleo (geradores, medidas, validação) |
 | `npm run typecheck` | Checagem de tipos do TypeScript |
 | `npm run build` | Gera os arquivos de produção em `out/` |
-| `npm run dist` | Gera o instalador e a versão portátil do Windows em `release/` |
+| `npm run dist` | Gera o instalador do Windows em `release/` |
 
 ## Como usar
 
