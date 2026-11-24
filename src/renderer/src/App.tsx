@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { generateScript } from '../../core/generators'
 import { languageInfo } from '../../core/languages'
 import { createDefaultLayout, createElement, createText, duplicateElement, withSamples, withTemplate } from '../../core/layout'
-import { toPrinterPayload } from '../../core/printerPayload'
+import { toClipboardText, toPrinterPayload } from '../../core/printerPayload'
 import { buildSyspdvExport, normalizeSyspdvCode } from '../../core/exporting'
 import { extractCandidates, normalizeScript, summarizeImport, type ImportResult } from '../../core/importing'
 import { LAYOUT_FILE_EXTENSION, parseLayout, serializeLayout } from '../../core/serialization'
@@ -228,7 +228,7 @@ export function App() {
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(script.replace(/\n/g, '\r\n'))
+      await navigator.clipboard.writeText(toClipboardText(script))
       notify('success', 'Código copiado. Cole em Utilitários > Configuração de layouts > Etiqueta no SysPDV.')
     } catch (error) {
       notify('error', `Não foi possível copiar: ${errorMessage(error)}`)
@@ -239,7 +239,7 @@ export function App() {
     if (!printer) return
     setPrinting(true)
     try {
-      const payload = toPrinterPayload(generateScript(layout, { withSamples: true }), layout.language)
+      const payload = toPrinterPayload(generateScript(layout, { withSamples: true }))
       await window.api.printRaw(printer, payload)
       notify('success', `Etiqueta de teste enviada para ${printer}.`)
     } catch (error) {

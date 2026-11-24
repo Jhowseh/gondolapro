@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { generateScript } from '../src/core/generators'
 import { createBarcode, createDefaultLayout, createLine, createText } from '../src/core/layout'
 import { barcodeData, elementBox, measureText, textInkBox } from '../src/core/measure'
-import { toPrinterPayload } from '../src/core/printerPayload'
+import { STX } from '../src/core/controlCodes'
+import { buildSyspdvExport } from '../src/core/exporting'
+import { extractCandidates } from '../src/core/importing'
+import { toClipboardText, toPrinterPayload } from '../src/core/printerPayload'
 import { parseLayout, serializeLayout } from '../src/core/serialization'
 import { cleanSamples, findTags, substituteSamples } from '../src/core/syspdvFields'
 import { validateLayout } from '../src/core/validation'
-import { layoutWith } from './fixtures'
+import { description, layoutWith } from './fixtures'
 
 describe('SysPDV tags', () => {
   it('finds numbered and named tags in content', () => {
@@ -68,18 +71,53 @@ describe('element box', () => {
   })
 })
 
-describe('printer payload', () => {
-  it('adds STX to PPLA system commands and splits the L line', () => {
-    const payload = toPrinterPayload('O0220\nLC0000\nH14\nE', 'ppla')
-    expect(payload).toBe('\x02O0220\r\n\x02L\r\nC0000\r\nH14\r\nE\r\n')
+describe('PPLA header without STX', () => {
+  const handWritten = { ...layoutWith([description]), templates: { ppla: { header: 'O0220\ne\nLC0000\nH14', footer: 'Q</17>\nE' } } }
+  const normalized = [`${STX}O0220`, `${STX}e`, `${STX}L`, 'C0000', 'H14']
+  const generated = [...normalized, '131100000970008</3>', 'Q</17>', 'E']
+
+  it('adds STX to the system lines and splits the L line when generating', () => {
+    expect(generateScript(handWritten).split('\n')).toEqual(generated)
   })
 
-  it('does not add STX again when the script already has it', () => {
-    expect(toPrinterPayload('\x02L\nH14\nE', 'ppla')).toBe('\x02L\r\nH14\r\nE\r\n')
+  it('copies the normalized header', () => {
+    expect(toClipboardText(generateScript(handWritten))).toBe(generated.join('\r\n'))
   })
 
-  it('keeps ZPL untouched apart from line breaks', () => {
-    expect(toPrinterPayload('^XA\n^XZ', 'zpl')).toBe('^XA\r\n^XZ\r\n')
+  it('exports the normalized header to the SysPDV XML', () => {
+    const bytes = buildSyspdvExport({ code: '04', description: 'ETIQUETA', script: generateScript(handWritten) })
+    const [candidate] = extractCandidates(bytes, 'layout.xml')
+    expect(candidate.script.trim().split('\n')).toEqual(generated)
+  })
+
+  it('prints the normalized header in the test print', () => {
+    const payload = toPrinterPayload(generateScript(handWritten, { withSamples: true }))
+    expect(payload).toBe([...normalized, '131100000970008ARROZ T1 PREMIUM 5KG', 'Q0001', 'E', ''].join('\r\n'))
+  })
+
+  it('adds STX to every header line when there is no L line', () => {
+    const layout = { ...layoutWith([]), templates: { ppla: { header: 'O0220\ne', footer: 'E' } } }
+    expect(generateScript(layout).split('\n')).toEqual([`${STX}O0220`, `${STX}e`, 'E'])
+  })
+
+  it('keeps a header that already has STX as written', () => {
+    const layout = { ...layoutWith([]), templates: { ppla: { header: `${STX}L\nH14`, footer: 'E' } } }
+    expect(generateScript(layout).split('\n')).toEqual([`${STX}L`, 'H14', 'E'])
+  })
+
+  it('does not touch EPL and ZPL headers', () => {
+    const layout = { ...layoutWith([], 'zpl'), templates: { zpl: { header: 'LC0000\n^XA', footer: '^XZ' } } }
+    expect(generateScript(layout).split('\n')).toEqual(['LC0000', '^XA', '^XZ'])
+  })
+})
+
+describe('line breaks', () => {
+  it('sends CRLF to the printer and ends with a line break', () => {
+    expect(toPrinterPayload('^XA\n\n^XZ')).toBe('^XA\r\n^XZ\r\n')
+  })
+
+  it('copies with CRLF', () => {
+    expect(toClipboardText('^XA\r\n^XZ')).toBe('^XA\r\n^XZ')
   })
 })
 

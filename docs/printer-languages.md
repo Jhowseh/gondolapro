@@ -109,7 +109,9 @@ Baseado num layout real exportado do SysPDV (gôndola com preço referencial, im
 
 A exportação do SysPDV confirmou que **o próprio SysPDV grava o caractere STX** (código 2) no início dos comandos de sistema (`<STX>O0220`, `<STX>e`, `<STX>L`). Nos PDFs de referência ele não aparece porque é invisível. Na tela do GôndolaPro ele aparece como `<STX>`, e o botão **Copiar código** copia o caractere real.
 
-Para a impressão de teste, `toPrinterPayload` envia o script como está quando ele já tem STX. Quando não tem (cabeçalhos antigos, escritos à mão), coloca STX em todas as linhas até a que começa com `L`. Se essa linha for algo como `LC0000`, ela é enviada como `<STX>L` seguido de `C0000` em outra linha.
+O cabeçalho PPLA é acertado uma vez só, quando o código é gerado (`pplaHeader`, chamado por `generateScript`). Se alguma linha do cabeçalho já tem STX, ele fica como foi escrito. Se nenhuma tem (cabeçalhos antigos, escritos à mão), o gerador coloca STX em todas as linhas até a que começa com `L` (em todas, se não houver linha `L`). Se essa linha for algo como `LC0000`, ela vira `<STX>L` seguido de `C0000` em outra linha.
+
+Por isso **Copiar código**, **Exportar XML** e **Imprimir teste** partem do mesmo script, e o SysPDV recebe o mesmo cabeçalho que a impressão de teste usa. O painel de código também já mostra o `<STX>` acrescentado.
 
 ## EPL / PPLB (Zebra, Argox, Elgin, Honeywell)
 

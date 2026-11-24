@@ -1,4 +1,4 @@
-import { stripStx } from '../controlCodes'
+import { STX, stripStx } from '../controlCodes'
 import { fontOverrideFor } from '../fonts'
 import { partitionByInversion } from '../layout'
 import { PPLA_TRANSPARENT_COMMAND, PPLA_XOR_COMMAND } from '../printModes'
@@ -27,6 +27,23 @@ const MAX_MULTIPLIER = 24
 
 export function pplaUnitMm(headerLines: string[]): number {
   return headerLines.some((line) => stripStx(line).trim() === 'm') ? PPLA_METRIC_UNIT_MM : PPLA_INCH_UNIT_MM
+}
+
+export function pplaHeader(lines: string[]): string[] {
+  if (lines.some((line) => line.startsWith(STX))) {
+    return lines
+  }
+  const labelStart = lines.findIndex((line) => line.startsWith('L'))
+  return lines.flatMap((line, index) => {
+    if (labelStart === -1 || index < labelStart) {
+      return [`${STX}${line}`]
+    }
+    if (index === labelStart) {
+      const rest = line.slice(1)
+      return rest ? [`${STX}L`, rest] : [`${STX}L`]
+    }
+    return [line]
+  })
 }
 
 export function multiplierCode(value: number): string {

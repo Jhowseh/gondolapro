@@ -24,7 +24,7 @@ src/
     exporting.ts        gravação do XML de layout no formato do SysPDV
     controlCodes.ts     caractere STX e a forma visível <STX> usada na tela
     printModes.ts       modos de impressão do PPLA (A1 = XOR) para a prévia
-    printerPayload.ts   prepara o texto para envio direto à impressora
+    printerPayload.ts   quebras de linha CRLF para copiar e para enviar à impressora
     validation.ts       verificações exibidas no painel Verificação
     serialization.ts    leitura e gravação do arquivo .etq
     layout.ts           criação de elementos, layout padrão e alterações puras do layout (exemplos, cabeçalho)
@@ -89,7 +89,7 @@ A largura do texto na prévia é estimada como `quantidade de caracteres × avan
 ## Fluxo de dados na interface
 
 1. `App.tsx` guarda o layout em um histórico (`useHistory`), o que dá desfazer/refazer em qualquer alteração.
-2. A cada alteração, `generateScript` gera o código e `validateLayout` gera os avisos. Ambos são recalculados com `useMemo`.
+2. A cada alteração, `generateScript` gera o código e `validateLayout` gera os avisos. Ambos são recalculados com `useMemo`. No PPLA, `generateScript` já coloca o STX que faltar no cabeçalho (ver [O caractere STX](printer-languages.md#o-caractere-stx)), então **Copiar código**, **Exportar XML** e **Imprimir teste** usam o mesmo script. A conversão para CRLF fica só em `printerPayload.ts`: `toClipboardText` para **Copiar código** e `toPrinterPayload` para a impressora.
 3. A prévia (`LabelCanvas`) usa as mesmas funções de medida do núcleo, então o que aparece na tela corresponde ao que os geradores calculam. Ela desenha os elementos na mesma ordem em que vão para o código (`emissionOrder`: linhas e caixas invertidas por último). Elementos em modo de inversão (`invertedElementIds`) são desenhados com mistura "difference", que reproduz o XOR da impressora. A grade é desenhada por cima com mistura "multiply", para não aparecer dentro das áreas pretas.
 4. **Imprimir teste** gera o script com valores de exemplo (`withSamples`), passa por `toPrinterPayload` e manda para o processo principal, que grava os bytes em Latin-1 num arquivo temporário e chama `resources/raw-print.ps1`.
 
