@@ -24,7 +24,7 @@ O segundo comando baixa o executável do Electron; o npm 11+ não roda mais esse
 | `npm test` | Roda os testes do núcleo (geradores, medidas, validação) |
 | `npm run typecheck` | Checagem de tipos do TypeScript |
 | `npm run build` | Gera os arquivos de produção em `out/` |
-| `npm run dist` | Gera o instalador do Windows em `release/` |
+| `npm run dist` | Gera o instalador e a versão portátil do Windows em `release/` |
 
 ## Como usar
 
@@ -90,7 +90,7 @@ No código e nos editores, `<STX>` representa o caractere de controle STX (códi
 
 ## Situação atual
 
-Versão 0.1. Os geradores seguem a sintaxe dos manuais e dos exemplos de layout do SysPDV, mas **ainda não foram validados em uma impressora física**. A lista do que precisa ser conferido está em [docs/printer-languages.md](docs/printer-languages.md#o-que-precisa-ser-calibrado).
+Versão 1.0. Os geradores seguem a sintaxe dos manuais e dos exemplos de layout do SysPDV, mas **ainda não foram validados em uma impressora física**. A lista do que precisa ser conferido está em [docs/printer-languages.md](docs/printer-languages.md#o-que-precisa-ser-calibrado).
 
 ## Créditos
 

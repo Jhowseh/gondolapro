@@ -1,8 +1,9 @@
 {
   "name": "gondolapro",
   "productName": "GôndolaPro",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Gerador visual de layouts de etiqueta para o SysPDV",
+  "author": "PBtec",
   "private": true,
   "main": "./out/main/index.js",
   "scripts": {
@@ -29,8 +30,27 @@
       }
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "artifactName": "GondolaPro-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "GondolaPro-Portable-${version}.${ext}"
     }
   },
   "dependencies": {
